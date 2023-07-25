@@ -1,0 +1,10 @@
+LICENSE
+README.md
+setup.py
+hurstexponent/__init__.py
+hurstexponent/hurst_exponent.py
+hurstexponent.egg-info/PKG-INFO
+hurstexponent.egg-info/SOURCES.txt
+hurstexponent.egg-info/dependency_links.txt
+hurstexponent.egg-info/requires.txt
+hurstexponent.egg-info/top_level.txt
