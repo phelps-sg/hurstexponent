@@ -1,11 +1,10 @@
-from typing import List, Optional, Tuple
-
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from hurst import compute_Hc
 from matplotlib import pyplot as plt
 from scipy.optimize import least_squares
+from typing import List, Optional, Tuple
 
 
 class HurstEstimator:
