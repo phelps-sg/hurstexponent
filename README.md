@@ -8,7 +8,9 @@ Feel free to raise an issue if you find a problem; this repository is actively b
 
 # Table of Contents
 [Installation](#Installation)</b>
+
 [Basic Usage](#Usage)</b>
+
 [Example](#Example)</b>
 
 ## Installation 
