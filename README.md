@@ -81,6 +81,7 @@ This tells you everything you need to know for the simplest, typical use cases:
 	axs[1].grid(False)
 	
 	plt.show()
-	
-	
+
+
+![Hurst, generalised and r/s hurst](/plots/hurst.png)
 	
