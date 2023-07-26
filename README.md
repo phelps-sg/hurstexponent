@@ -23,7 +23,7 @@ We recommend conda for managing Python packages; pip for everything else. To get
 
 This tells you everything you need to know for the simplest, typical use cases:
   
-	import hurstexponent 
+	from hurstexponent.hurst_exponent import HurstEstimator
 
   	# Initialize the HurstEstimator with a time series
 	np.random.seed(42)
@@ -43,6 +43,8 @@ This tells you everything you need to know for the simplest, typical use cases:
   	
 ## Example 
 
+	from hurstexponent.hurst_exponent import HurstEstimator
+ 
 	np.random.seed(42)
 	random_changes = 1. + np.random.randn(99999) / 1000.
 	series = np.cumprod(random_changes)
