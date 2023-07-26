@@ -7,9 +7,9 @@ This repository contains a Python class for estimating the Hurst exponent of a t
 Feel free to raise an issue if you find a problem; this repository is actively being developed and any tickets will be addressed in order of importance.
 
 # Table of Contents
-##### <ins>Installation</ins>
-##### <ins>Usage</ins>
-##### <ins>Examples</ins>
+[Installation](#Installation)
+[Usage](#Basic Usage)
+[Example ](#Example )
 
 ## Installation 
 
