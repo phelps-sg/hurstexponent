@@ -7,9 +7,9 @@ This repository contains a Python class for estimating the Hurst exponent of a t
 Feel free to raise an issue if you find a problem; this repository is actively being developed and any tickets will be addressed in order of importance.
 
 # Table of Contents
-[Installation](#Installation)
-[Usage](#Basic Usage)
-[Example ](#Example )
+[Installation](#Installation)</b>
+[Basic Usage](#Usage)</b>
+[Example](#Example)</b>
 
 ## Installation 
 
@@ -17,7 +17,7 @@ We recommend conda for managing Python packages; pip for everything else. To get
 
   `pip install scipy numpy pandas statsmodels hurst typing matplotlib`
 
-## Basic Usage 
+## Usage 
 
 This tells you everything you need to know for the simplest, typical use cases:
   
