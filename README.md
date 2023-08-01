@@ -85,10 +85,11 @@ This tells you everything you need to know for the simplest, typical use cases:
 	axs[1].grid(False)
 	
 	plt.show()
+ 
+
+![Hurst, generalised and r/s hurst](/plots/hurst.png)
 
  # Acknowledgement 
 
  The Package makes use of https://github.com/Mottl/hurst to make use of their computation of the Hurst from the R/S method. 
 
-
-![Hurst, generalised and r/s hurst](/plots/hurst.png)
