@@ -55,6 +55,19 @@ class HurstEstimator:
         # Store the time series
         self.ts = ts
 
+
+    # Helper functions
+    def _interpret_hurst(self, H: float) -> str:
+        if not 0 <= H <= 1:
+            return "Hurst Exponent not in a valid range [0, 1], series may not be a long memory process"
+        if H == 0.5:
+            return "Perfect diffusivity: series is a geometric or Brownian random walk"
+        if H < 0.5:
+            return "Sub-diffusive: series demonstrates anti-persistent behavior"
+        if H > 0.5:
+            return "Super-diffusive: series demonstrates persistent long-range dependence"
+        return "Invalid Hurst Exponent"
+
     def _std_of_sums(self, chunk_size):
         """
         Calculates the standard deviation of sums of time series chunks of size chunk_size.
@@ -77,6 +90,8 @@ class HurstEstimator:
                 sums.append(np.sum(chunk))  # Sum up the chunk and add to the list
         return np.std(sums)  # Return the standard deviation of the sums
 
+
+    # Generalized Hurst
     def generalized_hurst(self, fitting_method: str = 'direct_fit') -> Tuple[float, float, List[float]]:
         if fitting_method not in ['log_log', 'direct_fit']:
             raise ValueError(f"Unknown method: {fitting_method}. Expected 'log_log' or 'direct_fit'.")
@@ -116,25 +131,18 @@ class HurstEstimator:
         # Return the chunk sizes and y_values along with the Hurst exponent and constant D
         return H, D, [list(chunk_sizes), y_values]
 
+
+    # From alpha
     def hurst_from_alpha(self, alpha: float) -> Tuple[float, Optional[float]]:
         H = 1 - alpha / 2
         return H, None
 
+
+    # R/S Range
     def rescaled_range(self, kind: str = 'random_walk') -> Tuple[float, float, List[float]]:
         H, c, data = compute_Hc(self.ts, kind=kind)
         return H, c, data
 
-    # Helper
-    def _interpret_hurst(self, H: float) -> str:
-        if not 0 <= H <= 1:
-            return "Hurst Exponent not in a valid range [0, 1], series may not be a long memory process"
-        if H == 0.5:
-            return "Perfect diffusivity: series is a geometric or Brownian random walk"
-        if H < 0.5:
-            return "Sub-diffusive: series demonstrates anti-persistent behavior"
-        if H > 0.5:
-            return "Super-diffusive: series demonstrates persistent long-range dependence"
-        return "Invalid Hurst Exponent"
 
     def estimate(self, method: str = 'generalized_hurst', **kwargs) -> Tuple[float, float, pd.DataFrame, str]:
         if method not in ['rescaled_range', 'hurst_from_alpha', 'generalized_hurst']:
