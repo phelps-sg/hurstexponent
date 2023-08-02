@@ -57,7 +57,6 @@ class HurstEstimator:
         # Store the time series
         self.ts = ts
 
-
     # Helper functions
     def _interpret_hurst(self, H: float) -> str:
         """ Interpretation of Hurst Exponent """
@@ -92,7 +91,6 @@ class HurstEstimator:
             if len(chunk) == chunk_size:  # If we have a full chunk of size chunk_size
                 sums.append(np.sum(chunk))  # Sum up the chunk and add to the list
         return np.std(sums)  # Return the standard deviation of the sums
-
 
     # Generalized Hurst
     def generalized_hurst(self, fitting_method: str = 'direct_fit') -> Tuple[float, float, List[float]]:
