@@ -40,16 +40,18 @@ class HurstEstimator:
                 Time series data
         """
 
+        # input check - cannot proceed without a time series
         if ts is None:
             raise ValueError("Time series can't be None")
 
         # Pre-processing checks
         ts = np.array(ts, dtype=float)
-        ts = np.where(ts == None, np.nan, ts)
 
+        # input check - NaNs or infs will cause problems later
         if np.any(np.isnan(ts)) or np.any(np.isinf(ts)):
             raise ValueError("Time series contains NaN or Inf values")
 
+        # pre-processing step - zero values will cause problems with log-log regression
         ts = np.where(ts == 0, 1e-10, ts)
 
         # Store the time series
@@ -58,6 +60,7 @@ class HurstEstimator:
 
     # Helper functions
     def _interpret_hurst(self, H: float) -> str:
+        """ Interpretation of Hurst Exponent """
         if not 0 <= H <= 1:
             return "Hurst Exponent not in a valid range [0, 1], series may not be a long memory process"
         if H == 0.5:
@@ -113,7 +116,8 @@ class HurstEstimator:
                 y_values.append(result)
                 valid_chunk_sizes.append(chunk_size)
 
-        chunk_sizes = valid_chunk_sizes  # Only keep chunk sizes for which _std_of_sums gave a valid result
+        # Only keep chunk sizes for which _std_of_sums gave a valid result
+        chunk_sizes = valid_chunk_sizes
 
         if fitting_method == 'direct_fit':
             result = least_squares(_residuals, [0.5, 0.5], loss='soft_l1',
@@ -131,28 +135,26 @@ class HurstEstimator:
         # Return the chunk sizes and y_values along with the Hurst exponent and constant D
         return H, D, [list(chunk_sizes), y_values]
 
-
-    # From alpha
-    def hurst_from_alpha(self, alpha: float) -> Tuple[float, Optional[float]]:
-        H = 1 - alpha / 2
-        return H, None
-
-
     # R/S Range
     def rescaled_range(self, kind: str = 'random_walk') -> Tuple[float, float, List[float]]:
         H, c, data = compute_Hc(self.ts, kind=kind)
         return H, c, data
 
+    # From alpha
+    @staticmethod
+    def hurst_from_alpha(alpha: float) -> Tuple[float, Optional[float]]:
+        H = 1 - alpha / 2
+        return H, None
 
     def estimate(self, method: str = 'generalized_hurst', **kwargs) -> Tuple[float, float, pd.DataFrame, str]:
         if method not in ['rescaled_range', 'hurst_from_alpha', 'generalized_hurst']:
             raise ValueError(f"Unknown method: {method}")
 
+        data = None
         if method == 'rescaled_range' or method == 'generalized_hurst':
             H, const, data = getattr(self, method)(**kwargs)
-        else:
-            H, const = getattr(self, method)(**kwargs)
-            data = None
+        else:  # if method == 'hurst_from_alpha'
+            H, const = getattr(HurstEstimator, method)(**kwargs)
 
         interpretation = self._interpret_hurst(H)
         return H, const, data, interpretation
@@ -167,18 +169,23 @@ if __name__ == '__main__':
     hurst_estimator = HurstEstimator(series)
 
     # Generalized Hurst
-    H, D, data, interpretation = hurst_estimator.estimate('generalized_hurst')
+    H, D, data, interpretation = hurst_estimator.estimate('generalized_hurst', fitting_method='direct_fit')
     print(f"Hurst Estimate via Generalised Hurst: {H}, D constant: {D if D is not None else 'N/A'} ({interpretation})")
 
     # Rescaled Range
     H, c, data, interpretation = hurst_estimator.estimate('rescaled_range', kind='random_walk')
     print(f"Hurst Estimate via R/S: {H}, c constant: {c if c is not None else 'N/A'} ({interpretation})")
 
+    # From Alpha
+    alpha = 0.65
+    H, _, _, interpretation = hurst_estimator.estimate('hurst_from_alpha', alpha=alpha)
+    print(f"Hurst Estimate from alpha: {H} ({interpretation})")
+
     # Plotting
     fig, axs = plt.subplots(1, 2, figsize=(10, 4))
 
     # Generalized Hurst
-    H, D, data, interpretation = hurst_estimator.estimate('generalized_hurst')
+    H, D, data, interpretation = hurst_estimator.estimate('generalized_hurst', fitting_method='direct_fit')
     chunk_sizes, y_values = data
     axs[0].plot(chunk_sizes, y_values, 'b.', label='Observed Values')
     axs[0].plot(chunk_sizes, D * np.array(chunk_sizes) ** H, "g--", label=f'Generalized Hurst (H={H:.2f})')
