@@ -99,7 +99,7 @@ class HurstEstimator:
         mean = np.mean(series)
         if mean != 0:
             # Convert noise like time series to random walk like time series
-            series = (self.ts - mean)/np.mean(series) # If not, subtract the mean to center the data around zero
+            series = (self.ts - mean) # If not, subtract the mean to center the data around zero
             series = np.diff(series) # Diff each observation making a series stationary
 
         min_lag = min_lag
@@ -142,7 +142,7 @@ class HurstEstimator:
         return H, c, [list(valid_lags), y_values]
 
 
-    def generalized_hurst(self, moment: int = 1, fitting_method: str = 'least_squares', min_lag: int = 10,
+    def generalized_hurst(self, moment: int = 1, fitting_method: str = 'least_squares', min_lag: int = 1,
                           max_lag: int = 1000) -> Tuple[float, float, List[List[float]]]:
         """
         Estimate the generalized Hurst exponent of a time series using the specified method.
@@ -183,7 +183,8 @@ class HurstEstimator:
         mean = np.mean(series)
         if mean != 0:
             # Convert noise like time series to random walk like time series
-            series = (self.ts - mean) / np.mean(series)  # If not, subtract the mean to center the data around zero
+            series = (self.ts - mean) # If not, subtract the mean to center the data around zero
+
 
         min_lag = min_lag
         max_lag = min(max_lag, len(series))
@@ -335,11 +336,8 @@ if __name__ == '__main__':
     # Use random_walk() function or generate a random walk series manually:
     series = stochastic_process(99999, proba=.5, cumprod=False)
 
-    # Series generated from a function, in this example, autocorrelation function (ACF)
-    # ACF_RANGE = len(sample)+1
-    # ACF_RANGE = 1001
-    #
-    # # Autocorrection function (ACF) of data sample
+
+    # Autocorrection function (ACF) of data sample
     # def acf(series: pd.Series, lags: int) -> List:
     #     """
     #     Returns a list of autocorrelation values for each of the lags from 0 to `lags`
@@ -353,6 +351,10 @@ if __name__ == '__main__':
     #
     # # Load sample data – TSLA stock trade signs.
     # sample = pd.read_csv('../stock_tsla.csv', header=0, index_col=0)
+    # # Series generated from a function, in this example, autocorrelation function (ACF)
+    # ACF_RANGE = len(sample) + 1
+    # ACF_RANGE = 1001
+    #
     # acf_series = acf(sample['trade_sign'], ACF_RANGE)[1:]
 
 
@@ -360,12 +362,12 @@ if __name__ == '__main__':
     hurst_estimator = HurstEstimator(series)
 
     # Hurst
-    H, D, data, interpretation = hurst_estimator.estimate('standard_hurst')
+    H, D, data, interpretation = hurst_estimator.estimate('standard_hurst', fitting_method = 'mle')
     print(f"Hurst Estimate via Standard Hurst: {H}, D constant: {D if D is not None else 'N/A'}, ({interpretation})")
 
     # Generalized Hurst
     moment = 1
-    H, c, data, interpretation = hurst_estimator.estimate('generalized_hurst', moment=moment)
+    H, c, data, interpretation = hurst_estimator.estimate('generalized_hurst', moment=moment, fitting_method = 'mle')
     print(f"Hurst Estimate via generalized_hurst: {H}, c constant: {c if c is not None else 'N/A'} ({interpretation})")
 
     # Rescaled Range
@@ -399,7 +401,7 @@ if __name__ == '__main__':
     fig, axs = plt.subplots(1, 3, figsize=(15, 4))  # Adjusted for 3 subplots
 
     # Standard Hurst
-    H, D, data, interpretation = hurst_estimator.estimate('standard_hurst')
+    H, D, data, interpretation = hurst_estimator.estimate('standard_hurst',  fitting_method = 'mle')
     lag_sizes, y_values = data
     axs[0].plot(lag_sizes, y_values, 'b.', label='Observed Values')
     axs[0].plot(lag_sizes, D * np.array(lag_sizes) ** H, "g--", label=f' Standard Hurst (H={H:.2f})')
@@ -411,7 +413,7 @@ if __name__ == '__main__':
 
     # Generalized Hurst
     moment = 1
-    H, c, data, _ = hurst_estimator.estimate('generalized_hurst', moment=moment)
+    H, c, data, _ = hurst_estimator.estimate('generalized_hurst', moment=moment,  fitting_method = 'mle')
     tau, S_q_tau = data  # change to raw values instead of logarithmic
     log_tau = np.log10(tau)  # calculate log_tau
     c = np.mean(np.log10(S_q_tau)) - H * np.mean(log_tau)  # calculate constant with log_S_q_tau
