@@ -20,7 +20,7 @@ def standard_hurst(series: np.array, fitting_method: str = 'mle', min_lag: int =
     fitting_method: str, optional
         The method to use to estimate the Hurst exponent. Options include:
         - 'OLS': Log-log OLS regression fitting method
-        - 'least_squares': Direct fitting using Least-squares
+        - 'least_squares': Direct fitting using Nonlinear Least-squares
         - 'mle': Maximum Likelihood Estimation (MLE)
         Default is 'OLS'.
     max_lag: int, optional
@@ -107,7 +107,7 @@ def generalized_hurst(series: np.array, moment: int = 1, fitting_method: str = '
     fitting_method : str, optional
         The method to use to estimate the Hurst exponent. Options include:
         - 'OLS': Log-log OLS regression fitting method
-        - 'least_squares': Direct fitting using Least-squares
+        - 'least_squares': Direct fitting using Nonlinear Least-squares
         - 'mle': Maximum Likelihood Estimation (MLE)
         Default is 'OLS'.
     max_lag : int, optional

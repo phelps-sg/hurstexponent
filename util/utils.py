@@ -40,7 +40,7 @@ def simple_series(length: int = 1000, noise_pct_std: float = 0.001) -> np.ndarra
 # the latter, and the inclusion of noise_pct_std parameter
 def stochastic_process(length: int, proba: float = 0.5, min_lag: int = 1, max_lag: int = 100, cumprod: bool = False) -> List[float]:
     """
-    Generates a random walk series
+    Generates a stochastic process
 
     Parameters
     ----------
@@ -121,7 +121,6 @@ def neg_log_likelihood(params, x_values, y_values,func: Callable) -> float:
 
     return loglikelihood
 
-
 def std_of_sums(ts: np.array, chunk_size: int) -> float:
     """
     Computes the standard deviation of sums of time series chunks of size chunk_size.
@@ -138,11 +137,13 @@ def std_of_sums(ts: np.array, chunk_size: int) -> float:
     std : float
         The standard deviation of the sums
     """
-    sums = []
-    for i in range(0, len(ts), chunk_size):  # Iterate over the time series with a step size of chunk_size
-        chunk = ts[i: i + chunk_size]  # Get the next chunk of size chunk_size
-        if len(chunk) == chunk_size:  # If we have a full chunk of size chunk_size
-            sums.append(np.sum(chunk))  # Sum up the chunk and add to the list
+    if chunk_size == 0:
+        return np.nan
+
+    # Reshape the array to have a size of (-1, chunk_size) and sum along the second axis
+    chunks = len(ts) // chunk_size
+    sums = ts[:chunks * chunk_size].reshape(-1, chunk_size).sum(axis=1)
+
     return np.std(sums)
 
 
