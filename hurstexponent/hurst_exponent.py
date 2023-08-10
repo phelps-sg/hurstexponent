@@ -1,5 +1,4 @@
 import numpy as np
-from hurst import compute_Hc
 from scipy.optimize import minimize
 from matplotlib import pyplot as plt
 from scipy.optimize import least_squares
@@ -176,7 +175,7 @@ def generalized_hurst(series: np.array, moment: int = 1, fitting_method: str = '
 
 if __name__ == '__main__':
 
-    # Generate simple series
+    # Generate simple random walk series
     #from util.utils import  simple_series
     #series = simple_series(length=99999, noise_pct_std=0.02) # avg. daily market volatility
 
@@ -190,6 +189,7 @@ if __name__ == '__main__':
     plt.title('Raw Series')
     plt.xlabel('Time')
     plt.ylabel('Value')
+    plt.savefig('../plots/random_walk.png', bbox_inches='tight')
     plt.show()
 
     # Hurst
@@ -201,6 +201,7 @@ if __name__ == '__main__':
     print(f"Hurst Estimate via Standard Hurst: {H}, D constant: {D if D is not None else 'N/A'}, ({interpretation})")
 
     # Hurst from Rescaled Range
+    from hurst import compute_Hc
     H, c, data = compute_Hc(series)
     print(f"Hurst Estimate via R/S: {H}, c constant: {c if c is not None else 'N/A'}, ({interpret_hurst(H)})")
 
