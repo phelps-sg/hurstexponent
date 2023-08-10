@@ -3,7 +3,7 @@ import numpy as np
 from scipy.stats import norm
 from typing import Callable, Iterable, List
 
-
+# Synthetic data generators
 def simple_series(length: int = 1000, noise_pct_std: float = 0.001) -> np.ndarray:
     """
     Generate a synthetic time series using a random walk model with added Gaussian noise
@@ -208,10 +208,10 @@ def interpret_hurst(H: float) -> str:
     str
         Interpretation of Hurst Exponent.
     """
-    # H = round(H, 2)
+    H = round(H, 2)
 
     if not 0 <= H <= 1:
-        return "Hurst Exponent not in a valid range [0, 1], series may not be a long memory process"
+        return "Hurst Exponent not in a valid range [0, 1].  Series may not be a long memory process"
     if H == 0.5:
         return "Perfect diffusivity: series is a geometric or Brownian random walk"
     if H < 0.5:

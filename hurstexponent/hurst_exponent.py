@@ -1,396 +1,190 @@
-import math
 import numpy as np
-import pandas as pd
 from hurst import compute_Hc
 from scipy.optimize import minimize
 from matplotlib import pyplot as plt
 from scipy.optimize import least_squares
 from typing import List, Optional, Tuple
 from arch.bootstrap import StationaryBootstrap
-from util.utils import std_of_sums, structure_function, interpret_hurst, neg_log_likelihood, stochastic_process, simple_series
+from util.utils import std_of_sums, structure_function, interpret_hurst, neg_log_likelihood
 
 
-class HurstEstimator:
+def standard_hurst(series: np.array, fitting_method: str = 'mle', min_lag: int = 10,
+                   max_lag: int = 1000) -> Tuple[float, float, List[float]]:
     """
-    This class is used to estimate the Hurst exponent of a time series. The Hurst exponent is a statistical measure
-    used to classify time series particularly in the field of finance, hydrology, etc. It helps in identifying whether
-    a time series is a random walk (H=0.5), or has some memory (H>0.5 or H<0.5).
+    Calculate the Hurst exponent of a time series from the standard deviation of sums of N successive events using
+    the specified fitting method.
 
-    Attributes
+    Parameters
     ----------
-    ts : np.array
-        A pre-processed time series
+    series: list or array-like series
+            Represent time-series data
+    fitting_method: str, optional
+        The method to use to estimate the Hurst exponent. Options include:
+        - 'OLS': Log-log OLS regression fitting method
+        - 'least_squares': Direct fitting using Least-squares
+        - 'mle': Maximum Likelihood Estimation (MLE)
+        Default is 'OLS'.
+    max_lag: int, optional
+        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 1000.
 
-    Methods
+    Returns
     -------
-    standard_hurst():
-        Estimates the Hurst exponent using standard Hurst method.
-    generalized_hurst(moment: int, max_lag: int = 19):
-        Estimates the Hurst exponent using generalized Hurst method.
-    rescaled_range(kind: str = 'random_walk'):
-        Estimates the Hurst exponent using rescaled range method.
-    hurst_from_alpha(alpha: float):
-        Estimates the Hurst exponent using the given alpha value.
-    confidence_interval(moment: int = 1, method: str = 'bootstrap', hurst_approach: str = 'generalized_hurst',
-                        block_size: int = 10, n_iterations: int = 1000, hurst_params: dict = {}):
-        Estimates Hurst exponent and calculates its confidence interval.
-    estimate(method: str = 'hurst', **kwargs):
-        Estimates the Hurst exponent using the given method.
+     A tuple containing:
+             - H: The Hurst exponent
+             - c: A constant
+             - [list(lag_sizes), y_values]: A list containing lag sizes and corresponding y_values
+    interpretation: str
+        Interpretation of Hurst Exponent.
+
+    Raises
+    ------
+    ValueError
+        If an invalid fitting_method is provided.
     """
 
-    def __init__(self, ts):
-        """
-        Initializes the HurstEstimator object with the provided time series data.
+    # Hurst exponent
+    def _hurst_function(N, H, c):
+        return c * N ** H
 
-        Parameters
-        ----------
-        ts : list or np.array
-            Time series data
-        """
+    # Ensure the fitting_method is valid
+    if fitting_method not in ['mle', 'least_squares', 'OLS']:
+        raise ValueError(f"Unknown method: {fitting_method}. Expected 'mle' or 'least_squares' 'OLS'.")
 
-        # Check if time series is provided
-        if ts is None:
-            raise ValueError("Time series can't be None")
+    # Check if the time series is stationary
+    series = series
+    mean = np.mean(series)
+    if mean != 0:
+        # Convert noise like time series to random walk like time series
+        series = (series - mean)  # If not, subtract the mean to center the data around zero
+        series = np.diff(series)  # Diff each observation making a series stationary
 
-        if len(ts) < 100:
-            raise ValueError("Length of series cannot be less than 100")
+    # Compute the valid lags and corresponding values
+    min_lag = min_lag
+    max_lag = max_lag or len(series) - 1  # max_lag = min(max_lag, len(series))
+    lag_sizes = range(min_lag, max_lag)
 
-        # Convert to numpy array and handle zeros
-        self.ts = np.where(np.array(ts, dtype=float) == 0, 1e-10, ts)
+    valid_lags_and_values = [(lag_size, std_of_sums(series, lag_size)) for lag_size in lag_sizes
+                             if std_of_sums(series, lag_size) is not None and
+                             std_of_sums(series, lag_size) != 0]
+    valid_lags, y_values = zip(*valid_lags_and_values)
+    if not valid_lags or not y_values:
+        return np.nan, np.nan, [[], []]
 
-        # Check for invalid values in the time series
-        if np.any(np.isnan(self.ts)) or np.any(np.isinf(self.ts)):
-            raise ValueError("Time series contains NaN or Inf values")
+    # Perform fitting based on the selected method
+    if fitting_method == 'mle':
+        initial_guess = [0.5, 0]  # Guess for both H_q and c
+        result = minimize(neg_log_likelihood, initial_guess,
+                          args=(np.array(valid_lags), np.array(y_values), _hurst_function))
+        H, c = result.x
+    elif fitting_method == 'least_squares':
+        _residuals = lambda params, N, y_values: y_values - _hurst_function(N, params[0], params[1])
+        initial_guess = [0.5, 0]
+        result = least_squares(_residuals, initial_guess,
+                               args=(valid_lags, y_values))  # result = least_squares(residual
+        H, c = result.x
+    else:  # Log-log OLS regression fitting method
+        log_valid_lags = np.log(valid_lags)
+        log_y_values = np.log(y_values)
+        A = np.vstack([log_valid_lags, np.ones(len(log_valid_lags))]).T
+        H, log_c = np.linalg.lstsq(A, log_y_values, rcond=None)[0]
+        c = np.exp(log_c)
 
+    interpretation = interpret_hurst(H)
 
-    def standard_hurst(self, fitting_method: str = 'least_squares', min_lag: int = 1,
-                       max_lag: int = 1000) -> Tuple[float, float, List[float]]:
-        """
-        Calculate the Hurst exponent of a time series from the standard deviation of sums of N successive events using
-        the specified fitting method.
-
-        fitting_method : str, optional
-            The method to use to estimate the Hurst exponent. Options include:
-            - 'OLS': Log-log OLS regression fitting method
-            - 'least_squares': Direct fitting using Least-squares
-            - 'mle': Maximum Likelihood Estimation (MLE)
-            Default is 'OLS'.
-        max_lag : int, optional
-            The maximum lag to use in the calculation. Default is 1000.
-
-        :return: A tuple containing:
-                 - H: The Hurst exponent
-                 - c: A constant
-                 - [list(lag_sizes), y_values]: A list containing lag sizes and corresponding y_values
-
-        :raises ValueError: If an invalid fitting_method is provided.
-        """
-
-        # Hurst exponent
-        def _hurst_function(N, H, c):
-            return c * N ** H
-
-        # Ensure the fitting_method is valid
-        if fitting_method not in ['mle', 'least_squares', 'OLS']:
-            raise ValueError(f"Unknown method: {fitting_method}. Expected 'mle' or 'least_squares' 'OLS'.")
-
-        # Check if the time series is stationary
-        series = self.ts
-        mean = np.mean(series)
-        if mean != 0:
-            # Convert noise like time series to random walk like time series
-            series = (self.ts - mean) # If not, subtract the mean to center the data around zero
-            series = np.diff(series) # Diff each observation making a series stationary
-
-        min_lag = min_lag
-        max_lag = min(max_lag, len(series))
-
-        # Compute the lag sizes based on the fitting method
-        # if fitting_method == 'log_log':
-        #     lag_sizes = [int(10 ** x) for x in np.arange(math.log10(min_lag), math.log10(max_lag), 0.25)]
-        #     lag_sizes.append(len(series))
-        # else:
-        #     lag_sizes = range(min_lag, max_lag)
-        lag_sizes = range(min_lag, max_lag)
-
-        # Compute the valid lags and corresponding values
-        valid_lags_and_values = [(lag_size, std_of_sums(series, lag_size)) for lag_size in lag_sizes
-                                 if std_of_sums(series, lag_size) is not None and
-                                 std_of_sums(series, lag_size) != 0]
-        valid_lags, y_values = zip(*valid_lags_and_values)
-        if not valid_lags or not y_values:
-            return np.nan, np.nan, [[], []]
-
-        # Perform fitting based on the selected method
-        if fitting_method == 'mle':
-            initial_guess = [0.5, 0]  # Guess for both H_q and c
-            result = minimize(neg_log_likelihood, initial_guess,
-                              args=(np.array(valid_lags), np.array(y_values), _hurst_function))
-            H, c = result.x
-        elif fitting_method == 'least_squares':
-            _residuals = lambda params, N, y_values: y_values - _hurst_function(N, params[0], params[1])
-            initial_guess = [0.5, 0]
-            result = least_squares(_residuals, initial_guess, args=(valid_lags, y_values))  # result = least_squares(residual
-            H, c = result.x
-        else:  # Log-log OLS regression fitting method
-            log_valid_lags = np.log(valid_lags)
-            log_y_values = np.log(y_values)
-            A = np.vstack([log_valid_lags, np.ones(len(log_valid_lags))]).T
-            H, log_c = np.linalg.lstsq(A, log_y_values, rcond=None)[0]
-            c = np.exp(log_c)
-
-        return H, c, [list(valid_lags), y_values]
+    return H, c, [list(valid_lags), y_values], interpretation
 
 
-    def generalized_hurst(self, moment: int = 1, fitting_method: str = 'least_squares', min_lag: int = 1,
-                          max_lag: int = 1000) -> Tuple[float, float, List[List[float]]]:
-        """
-        Estimate the generalized Hurst exponent of a time series using the specified method.
+def generalized_hurst(series: np.array, moment: int = 1, fitting_method: str = 'mle', min_lag: int = 1,
+                      max_lag: int = 1000) -> Tuple[float, float, List[List[float]]]:
+    """
+    Estimate the generalized Hurst exponent of a time series using the specified method.
 
-        Parameters
-        ----------
-        moment : int
-            The moment to use in the calculation. Defaults to 1st moment, the mean.
-        fitting_method : str, optional
-            The method to use to estimate the Hurst exponent. Options include:
-            - 'OLS': Log-log OLS regression fitting method
-            - 'least_squares': Direct fitting using Least-squares
-            - 'mle': Maximum Likelihood Estimation (MLE)
-            Default is 'OLS'.
-        max_lag : int, optional
-            The maximum lag to use in the calculation. Default is 1000.
+    Parameters
+    ----------
+    series : list or array-like series
+            Represent time-series data
+    moment : int
+        The moment to use in the calculation. Defaults to 1st moment, the mean.
+    fitting_method : str, optional
+        The method to use to estimate the Hurst exponent. Options include:
+        - 'OLS': Log-log OLS regression fitting method
+        - 'least_squares': Direct fitting using Least-squares
+        - 'mle': Maximum Likelihood Estimation (MLE)
+        Default is 'OLS'.
+    max_lag : int, optional
+        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 1000.
 
-        Returns
-        -------
-        Tuple[float, float, List[List[float]]]
-            The estimated Hurst exponent, the constant c, and the list of valid lags and their corresponding S_q_tau values.
+    Returns
+    -------
+    Tuple[float, float, List[List[float]]]
+        The estimated Hurst exponent, the constant c, and the list of valid lags and their corresponding S_q_tau values.
 
-        Raises
-        ------
-        ValueError
-            If an invalid fitting_method is provided.
-        """
+    Raises
+    ------
+    ValueError
+        If an invalid fitting_method is provided.
+    """
 
-        # Generalised Hurst
-        def _generalized_function(lag, H_q, c):
-            return c * (lag ** H_q)
+    # Generalised Hurst
+    def _generalized_function(lag, H_q, c):
+        return c * (lag ** H_q)
 
-        # Ensure the fitting_method is valid
-        if fitting_method not in ['mle', 'least_squares', 'OLS']:
-            raise ValueError(f"Unknown method: {fitting_method}. Expected 'mle' or 'least_squares' 'OLS'.")
+    # Ensure the fitting_method is valid
+    if fitting_method not in ['mle', 'least_squares', 'OLS']:
+        raise ValueError(f"Unknown method: {fitting_method}. Expected 'mle' or 'least_squares' 'OLS'.")
 
-        series = self.ts
-        mean = np.mean(series)
-        if mean != 0:
-            # Convert noise like time series to random walk like time series
-            series = (self.ts - mean) # If not, subtract the mean to center the data around zero
+    # If not, subtract the mean to center the data around zero
+    series = series
+    mean = np.mean(series)
+    if mean != 0:
+        series = (series - mean)
 
+    # Compute the S_q_tau values and valid lags
+    min_lag = min_lag
+    max_lag = min(max_lag, len(series))
+    lag_sizes = range(min_lag, max_lag)
 
-        min_lag = min_lag
-        max_lag = min(max_lag, len(series))
+    S_q_tau_values, valid_lags = zip(
+        *[(structure_function(series, moment, lag), lag) for lag in lag_sizes
+          if np.isfinite(structure_function(series, moment, lag))])
+    if not valid_lags or not S_q_tau_values:
+        return np.nan, np.nan, [[], []]
 
-        # Compute the lag sizes based on the fitting method
-        # if fitting_method == 'log_log':
-        #     lag_sizes = [int(10 ** x) for x in np.arange(math.log10(min_lag), math.log10(max_lag), 0.25)]
-        #     lag_sizes.append(len(series))
-        # else:
-        #     lag_sizes = range(min_lag, max_lag)
-        lag_sizes = range(min_lag, max_lag)
+    # Perform fitting based on the selected method
+    if fitting_method == 'mle':
+        initial_guess = [0.5, 0]  # Guess for both H_q and c np.mean(S_q_tau_values)
+        result = minimize(neg_log_likelihood, initial_guess,
+                          args=(np.array(valid_lags), np.array(S_q_tau_values), _generalized_function))
+        H_q, c = result.x
+    elif fitting_method == 'least_squares':
+        _residuals = lambda params, lag, S_q_tau_values: S_q_tau_values - _generalized_function(lag, params[0], params[1])
+        initial_guess = [0.5, 0]
+        result = least_squares(_residuals, initial_guess, args=(valid_lags, S_q_tau_values))
+        H_q, c = result.x
+    else:  # Log-log OLS regression fitting method
+        # Log-log regression fitting method
+        log_tau = np.log(valid_lags)
+        log_S_q_tau = np.log(S_q_tau_values)
+        A = np.vstack([log_tau, np.ones(len(log_tau))]).T
+        H_q, log_c = np.linalg.lstsq(A, log_S_q_tau / moment, rcond=None)[0]
+        c = np.exp(log_c)
 
-        # Compute the S_q_tau values and valid lags
-        S_q_tau_values, valid_lags = zip(
-            *[(structure_function(series, moment, lag), lag) for lag in lag_sizes
-              if np.isfinite(structure_function(series, moment, lag))])
-        if not valid_lags or not S_q_tau_values:
-            return np.nan, np.nan, [[], []]
+    interpretation = interpret_hurst(H_q)
 
-        # Perform fitting based on the selected method
-        if fitting_method == 'mle':
-            initial_guess = [0.5, 0]  # Guess for both H_q and c np.mean(S_q_tau_values)
-            result = minimize(neg_log_likelihood, initial_guess,
-                              args=(np.array(valid_lags), np.array(S_q_tau_values), _generalized_function))
-            H_q, c = result.x
-        elif fitting_method == 'least_squares':
-            _residuals = lambda params, lag, S_q_tau_values: S_q_tau_values - _generalized_function(lag, params[0], params[1])
-            initial_guess = [0.5, 0]
-            result = least_squares(_residuals, initial_guess, args=(valid_lags, S_q_tau_values))
-            H_q, c = result.x
-        else:  # Log-log OLS regression fitting method
-            # Log-log regression fitting method
-            log_tau = np.log(valid_lags)
-            log_S_q_tau = np.log(S_q_tau_values)
-            A = np.vstack([log_tau, np.ones(len(log_tau))]).T
-            H_q, log_c = np.linalg.lstsq(A, log_S_q_tau / moment, rcond=None)[0]
-            c = np.exp(log_c)
-
-        return H_q, c, [valid_lags, S_q_tau_values]
-
-
-    def rescaled_range(self, kind: str = 'random_walk') -> Tuple[float, float, List[float]]:
-        """Computes the rescaled range of the time series.
-
-        Parameters
-        ----------
-        kind: str, optional
-            Kind of series for the calculation. Default is 'random_walk'.
-
-        Returns
-        -------
-        Tuple[float, float, List[float]]
-            Tuple containing the Hurst exponent, constant 'c', and data.
-        """
-        series = self.ts
-
-        return compute_Hc(series, kind=kind, simplified=False)
-
-
-    @staticmethod
-    def hurst_from_alpha(alpha: float) -> Tuple[float, Optional[float]]:
-        """Estimates the Hurst exponent using alpha.
-
-        Parameters
-        ----------
-        alpha: float
-            The alpha value.
-
-        Returns
-        -------
-        Tuple[float, Optional[float]]
-            Tuple containing the Hurst exponent and None.
-        """
-        return 1 - alpha / 2, None
-
-
-    def confidence_interval(self, moment: int = 1, hurst_approach: str = 'standard_hurst',
-                            block_size: int = 100, n_iterations: int = 10000, hurst_params: dict = {}, **kwargs) -> \
-    Tuple[
-        float, float, float, float, str]:
-        """
-        Estimate Hurst exponent and calculate its confidence interval.
-
-        Parameters
-        ----------
-        ts: array_like
-            Time series data
-        moment : int
-            The moment for which the structure function is to be calculated. Defaults to 1st moment, the mean.
-        hurst_approach: str
-            Hurst method to use for Hurst exponent estimation. Options are 'rescaled_range', 'hurst_from_alpha', 'standard_hurst', 'generalized_hurst'.
-        block_size: int
-            Block size to use for bootstrapping.
-        n_iterations: int
-            Number of iterations for bootstrapping.
-        hurst_params: dict
-            Dictionary of parameters for the chosen Hurst method.
-
-        Returns
-        -------
-        Hurst exponent, lower and upper confidence intervals, standard deviation and its interpretation as a tuple.
-        """
-
-        hurst_values = []
-
-        bs = StationaryBootstrap(block_size, self.ts)
-        for data in bs.bootstrap(n_iterations):
-            ts_resample = data[0][0]
-            hurst_estimator = HurstEstimator(ts_resample)
-            if hurst_approach == 'generalized_hurst':
-                H, _, _, _ = hurst_estimator.estimate(hurst_approach, moment=moment, **hurst_params, **kwargs)
-            else:
-                H, _, _, _ = hurst_estimator.estimate(hurst_approach, **hurst_params, **kwargs)
-            hurst_values.append(H)
-
-        confidence_lower = np.percentile(hurst_values, 2.5)
-        confidence_upper = np.percentile(hurst_values, 97.5)
-        H = np.mean(hurst_values)
-        std_dev = np.std([confidence_lower, confidence_upper])  # Compute the standard deviation
-
-        return H, confidence_lower, confidence_upper, std_dev, interpret_hurst(H)
-
-    def estimate(self, method: str = 'standard_hurst', **kwargs) -> Tuple[float, float, pd.DataFrame, str]:
-        if method not in ['rescaled_range', 'hurst_from_alpha', 'standard_hurst', 'generalized_hurst']:
-            raise ValueError(f"Unknown method: {method}")
-
-        const = None
-        data = None
-        if method == 'rescaled_range':
-            H, const, data = self.rescaled_range(**kwargs)
-        elif method == 'standard_hurst':
-            H, const, data = self.standard_hurst(**kwargs)
-        elif method == 'generalized_hurst':
-            H, const, data = self.generalized_hurst(**kwargs)
-        elif method == 'hurst_from_alpha':
-            H, const = HurstEstimator.hurst_from_alpha(**kwargs)
-            data = None
-
-        interpretation = interpret_hurst(H)
-        return H, const, data, interpretation
+    return H_q, c, [valid_lags, S_q_tau_values], interpretation
 
 
 if __name__ == '__main__':
 
-    # np.random.seed(50)
-
+    # Generate simple series
+    #from util.utils import  simple_series
     #series = simple_series(length=99999, noise_pct_std=0.02) # avg. daily market volatility
 
-    # Use random_walk() function or generate a random walk series manually:
+    # Genereate stochastic process with specific trend properties
+    from util.utils import stochastic_process
     series = stochastic_process(99999, proba=.5, cumprod=False)
 
-
-    # Autocorrection function (ACF) of data sample
-    # def acf(series: pd.Series, lags: int) -> List:
-    #     """
-    #     Returns a list of autocorrelation values for each of the lags from 0 to `lags`
-    #     """
-    #     acl_ = []
-    #     for i in range(lags):
-    #         ac = series.autocorr(lag=i)
-    #         acl_.append(ac)
-    #     return acl_
-    #
-    #
-    # # Load sample data – TSLA stock trade signs.
-    # sample = pd.read_csv('../stock_tsla.csv', header=0, index_col=0)
-    # # Series generated from a function, in this example, autocorrelation function (ACF)
-    # ACF_RANGE = len(sample) + 1
-    # ACF_RANGE = 1001
-    #
-    # acf_series = acf(sample['trade_sign'], ACF_RANGE)[1:]
-
-
-    # Create an instance of HurstEstimator
-    hurst_estimator = HurstEstimator(series)
-
-    # Hurst
-    H, D, data, interpretation = hurst_estimator.estimate('standard_hurst', fitting_method = 'mle')
-    print(f"Hurst Estimate via Standard Hurst: {H}, D constant: {D if D is not None else 'N/A'}, ({interpretation})")
-
-    # Generalized Hurst
-    moment = 1
-    H, c, data, interpretation = hurst_estimator.estimate('generalized_hurst', moment=moment, fitting_method = 'mle')
-    print(f"Hurst Estimate via generalized_hurst: {H}, c constant: {c if c is not None else 'N/A'} ({interpretation})")
-
-    # Rescaled Range
-    H, c, data, interpretation = hurst_estimator.estimate('rescaled_range', kind='random_walk')
-    print(f"Hurst Estimate via R/S: {H}, c constant: {c if c is not None else 'N/A'}, ({interpretation})")
-
-
-    # # From Alpha
-    # alpha = 0.65
-    # H, _, _, interpretation = hurst_estimator.estimate('hurst_from_alpha', alpha=alpha)
-    # print(f"Hurst Estimate from alpha: {H}, ({interpretation})")
-
-    # # Confidence
-    # print('\n')
-    # print(f'Confidence interval for standard_hurst')
-    # H, lower_ci, upper_ci, std_dev, interpretation = hurst_estimator.confidence_interval(hurst_approach='standard_hurst', n_iterations=1000)
-    #
-    # print(f'Hurst: {H}, Upper CI {upper_ci}, Lower CI: {lower_ci}, Standard dev: {std_dev}. {interpretation}')
-
-
-    # Plotting
-
-    # Plot series
+    # Plot raw series
     plt.figure(figsize=(10, 6))
     plt.plot(series)
     plt.title('Raw Series')
@@ -398,10 +192,23 @@ if __name__ == '__main__':
     plt.ylabel('Value')
     plt.show()
 
-    fig, axs = plt.subplots(1, 3, figsize=(15, 4))  # Adjusted for 3 subplots
+    # Hurst
+    H, D, data, interpretation = standard_hurst(series)
+    print(f"Hurst Estimate via Standard Hurst: {H}, D constant: {D if D is not None else 'N/A'}, ({interpretation})")
+
+    # Generalized Hurst
+    H, c, data, interpretation = generalized_hurst(series)
+    print(f"Hurst Estimate via Standard Hurst: {H}, D constant: {D if D is not None else 'N/A'}, ({interpretation})")
+
+    # Hurst from Rescaled Range
+    H, c, data = compute_Hc(series)
+    print(f"Hurst Estimate via R/S: {H}, c constant: {c if c is not None else 'N/A'}, ({interpret_hurst(H)})")
+
+    # Plotting Hurst
+    fig, axs = plt.subplots(1, 3, figsize=(15, 4))
 
     # Standard Hurst
-    H, D, data, interpretation = hurst_estimator.estimate('standard_hurst',  fitting_method = 'mle')
+    H, c, data, _ = standard_hurst(series)
     lag_sizes, y_values = data
     axs[0].plot(lag_sizes, y_values, 'b.', label='Observed Values')
     axs[0].plot(lag_sizes, D * np.array(lag_sizes) ** H, "g--", label=f' Standard Hurst (H={H:.2f})')
@@ -412,8 +219,7 @@ if __name__ == '__main__':
     axs[0].grid(False)
 
     # Generalized Hurst
-    moment = 1
-    H, c, data, _ = hurst_estimator.estimate('generalized_hurst', moment=moment,  fitting_method = 'mle')
+    H, c, data, _ = generalized_hurst(series)
     tau, S_q_tau = data  # change to raw values instead of logarithmic
     log_tau = np.log10(tau)  # calculate log_tau
     c = np.mean(np.log10(S_q_tau)) - H * np.mean(log_tau)  # calculate constant with log_S_q_tau
@@ -427,7 +233,7 @@ if __name__ == '__main__':
     axs[1].grid(False)
 
     # Rescaled Range
-    H, c, data, interpretation = hurst_estimator.estimate('rescaled_range', kind='random_walk')
+    H, c, data = compute_Hc(series)
     axs[2].plot(data[0], data[1], 'b.', label='(Observed Values)')
     axs[2].plot(data[0], c * data[0] ** H, 'g--', label=f'R/S Hurst (H={H:.2f})')
     axs[2].loglog()
@@ -438,6 +244,3 @@ if __name__ == '__main__':
 
     plt.savefig('../plots/hurst.png', bbox_inches='tight')
     plt.show()
-
-
-
