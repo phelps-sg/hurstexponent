@@ -145,14 +145,15 @@ This tells you everything you need to know for the simplest, typical use cases:
 
  # Results
 
-	Hurst Estimate via Standard Hurst: 0.5, D constant: 0.000983850904421701, (Perfect diffusivity: series is a geometric or Brownian random walk)
-	Hurst Estimate via Generalized Hurst: 0.4803054601218207, D constant: 0.000983850904421701, (Sub-diffusive: series demonstrates anti-persistent behaviour)
-	Hurst Estimate via R/S: 0.46208345011334184, c constant: 0.7349054927466576, (Sub-diffusive: series demonstrates anti-persistent behaviour)
+	Hurst Estimate via Standard Hurst: 0.5, D constant: 0.0009305664974251287, (Perfect diffusivity: series is a geometric or Brownian random walk)
+	Hurst Estimate via Generalized Hurst: 0.5, D constant: 0.0009305664974251287, (Perfect diffusivity: series is a geometric or Brownian random walk)
+	Hurst Estimate via R/S: 0.4519136233264795, c constant: 0.8903883256230023, (Sub-diffusive: series demonstrates anti-persistent behaviour)
 	
 	Confidence:
-	Bootstrap Mean: 0.49445625494736545
-	Bootstrap Standard Deviation: 0.006538500409740609
-	95% Confidence Interval: (0.48164079414427385, 0.507271715750457)
+	Bootstrap Mean: 0.4897887973057037
+	Bootstrap Standard Deviation: 0.0098962340871434
+	95% Confidence Interval: (0.4703921784949026, 0.5091854161165047)
+
 
 
 ![Hurst, generalised and r/s hurst](/plots/hurst.png)
