@@ -26,11 +26,11 @@ This tells you everything you need to know for the simplest, typical use cases:
   
 	# Generate simple random walk series
 	from util.generate_series import simple_series
-	series = simple_series(length=99999, noise_pct_std=0.02, seed=38) # avg. daily market volatility
+	series = simple_series(length=99999, noise_pct_std=0.02, seed=70) # avg. daily market volatility
 
 	# Genereate stochastic process with specific long-range properties
 	# from util.utils import stochastic_process
-	# series = stochastic_process(length=99999, proba=.2, cumprod=False, seed=50)
+	# series = stochastic_process(length=99999, proba=.5, cumprod=False, seed=50)
 
 	# Plot raw series
 	plt.figure(figsize=(10, 6))
