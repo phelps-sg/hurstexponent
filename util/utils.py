@@ -1,91 +1,6 @@
-import warnings
 import numpy as np
 from scipy.stats import norm
-from typing import Callable, Iterable, List
-
-# Synthetic data generators
-def simple_series(length: int = 1000, noise_pct_std: float = 0.001) -> np.ndarray:
-    """
-    Generate a synthetic time series using a random walk model with added Gaussian noise
-
-    Parameters
-    ----------
-    length : int, optional
-        The length of the time series to generate. Default is 1000.
-    noise_pct_std : float, optional
-        The standard deviation of the Gaussian noise added to the series, expressed as a percentage of the standard
-        deviation of the original random walk. Default is 0.001.
-
-    Returns
-    -------
-    numpy.ndarray
-        The generated time series.
-    """
-
-    # Generate a series of random changes
-    # np.random.seed(42)
-    random_changes = 1 + np.random.randn(99999) / 1000
-
-    # Create a non-stationary random walk series and then difference it to make it stationary
-    series = np.cumprod(random_changes)  # create a random walk from random changes
-
-    # Scale the random changes by the desired standard deviation as a percentage of the mean value
-    series += np.random.randn(length) * noise_pct_std * np.std(series)
-
-    return series
-
-
-# Much of this function generalises Dmitry Motti's implementation of a random walk process, specifically around line 197
-# at https://github.com/Mottl/hurst/blob/master/hurst/__init__.py. Key improvements sround proba, which appears stale in
-# the latter, and the inclusion of noise_pct_std parameter
-def stochastic_process(length: int, proba: float = 0.5, min_lag: int = 1, max_lag: int = 100, cumprod: bool = False) -> List[float]:
-    """
-    Generates a stochastic process
-
-    Parameters
-    ----------
-    length : int
-        Length of the random walk series.
-    proba : float, default 0.5
-        The probability that the next increment will follow the trend.
-        Set proba > 0.5 for the persistent random walk,
-        set proba < 0.5 for the antipersistent one.
-    min_lag : int, default 1
-    max_lag : int, default 100
-        Minimum and maximum lag sizes to calculate trend direction.
-    cumprod : bool, default False
-        Generate a random walk as a cumulative product instead of cumulative sum.
-
-    Returns
-    -------
-    series : List[float]
-        Generated random walk series.
-    """
-    assert(min_lag>=1)
-    assert(max_lag>=min_lag)
-
-    if max_lag > length:
-        max_lag = length
-        warnings.warn("max_lag has been set to the length of the eries.")
-
-    series = np.zeros(length, dtype=float)
-    series[0] = 1. if cumprod else 0.
-
-    for i in range(1, length):
-        if i < min_lag + 1:
-            direction = np.sign(np.random.randn())
-        else:
-            lookback = np.random.randint(min_lag, min(i-1, max_lag)+1)
-            direction = np.sign(series[i-1] / series[i-1-lookback] - 1.) if cumprod else np.sign(series[i-1] - series[i-1-lookback])
-            direction *= np.sign(proba - np.random.uniform())
-
-        increment = np.abs(np.random.randn())
-        if cumprod:
-            series[i] = series[i-1] * np.abs(1 + increment / 1000. * direction)
-        else:
-            series[i] = series[i-1] + increment * direction
-
-    return series
+from typing import Callable, Iterable
 
 
 # Helper functions
@@ -121,15 +36,16 @@ def neg_log_likelihood(params, x_values, y_values,func: Callable) -> float:
 
     return loglikelihood
 
-def std_of_sums(ts: np.array, chunk_size: int) -> float:
+
+def std_of_sums(ts: np.array, lag_size: int) -> float:
     """
-    Computes the standard deviation of sums of time series chunks of size chunk_size.
+    Computes the standard deviation of sums of time series lags of size chunk_size.
 
     Parameters
     ----------
     ts : np.array
         Time series data
-    chunk_size : int
+    lag_size : int
         The size of each chunk of the time series
 
     Returns
@@ -137,12 +53,12 @@ def std_of_sums(ts: np.array, chunk_size: int) -> float:
     std : float
         The standard deviation of the sums
     """
-    if chunk_size == 0:
+    if lag_size == 0:
         return np.nan
 
     # Reshape the array to have a size of (-1, chunk_size) and sum along the second axis
-    chunks = len(ts) // chunk_size
-    sums = ts[:chunks * chunk_size].reshape(-1, chunk_size).sum(axis=1)
+    lags = len(ts) // lag_size
+    sums = ts[:lags * lag_size].reshape(-1, lag_size).sum(axis=1)
 
     return np.std(sums)
 
@@ -216,7 +132,7 @@ def interpret_hurst(H: float) -> str:
     if H == 0.5:
         return "Perfect diffusivity: series is a geometric or Brownian random walk"
     if H < 0.5:
-        return "Sub-diffusive: series demonstrates anti-persistent behavior"
+        return "Sub-diffusive: series demonstrates anti-persistent behaviour"
     if H > 0.5:
         return "Super-diffusive: series demonstrates persistent long-range dependence"
     return "Invalid Hurst Exponent"

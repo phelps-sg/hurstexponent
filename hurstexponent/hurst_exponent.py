@@ -1,22 +1,22 @@
 import numpy as np
+import pandas as pd
 from scipy.optimize import minimize
 from matplotlib import pyplot as plt
 from scipy.optimize import least_squares
-from typing import List, Optional, Tuple
-from arch.bootstrap import StationaryBootstrap
+from typing import List, Tuple
 from util.utils import std_of_sums, structure_function, interpret_hurst, neg_log_likelihood
 
 
 def standard_hurst(series: np.array, fitting_method: str = 'mle', min_lag: int = 10,
                    max_lag: int = 1000) -> Tuple[float, float, List[float]]:
     """
-    Calculate the Hurst exponent of a time series from the standard deviation of sums of N successive events using
+    Estiamte the Hurst exponent of a time series from the standard deviation of sums of N successive events using
     the specified fitting method.
 
     Parameters
     ----------
     series: list or array-like series
-            Represent time-series data
+            Represents time-series data
     fitting_method: str, optional
         The method to use to estimate the Hurst exponent. Options include:
         - 'OLS': Log-log OLS regression fitting method
@@ -24,7 +24,7 @@ def standard_hurst(series: np.array, fitting_method: str = 'mle', min_lag: int =
         - 'mle': Maximum Likelihood Estimation (MLE)
         Default is 'OLS'.
     max_lag: int, optional
-        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 1000.
+        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 500.
 
     Returns
     -------
@@ -41,25 +41,39 @@ def standard_hurst(series: np.array, fitting_method: str = 'mle', min_lag: int =
         If an invalid fitting_method is provided.
     """
 
-    # Hurst exponent
-    def _hurst_function(N, H, c):
-        return c * N ** H
+    series = series
+    if len(series) < 100:
+        raise ValueError("Length of series cannot be less than 100")
+
+    # Convert to series to array-like if series is not numpy array or pandas Series and handle zeros
+    if not isinstance(series, (np.ndarray, pd.Series)):
+        series = np.array(series, dtype=float)
+    replace_zero = 1e-10
+    series[series == 0] = replace_zero
+
+
+    # Check for invalid values in the time series
+    if np.any(np.isnan(series)) or np.any(np.isinf(series)):
+        raise ValueError("Time series contains NaN or Inf values")
 
     # Ensure the fitting_method is valid
     if fitting_method not in ['mle', 'least_squares', 'OLS']:
         raise ValueError(f"Unknown method: {fitting_method}. Expected 'mle' or 'least_squares' 'OLS'.")
 
     # Check if the time series is stationary
-    series = series
     mean = np.mean(series)
     if mean != 0:
         # Convert noise like time series to random walk like time series
         series = (series - mean)  # If not, subtract the mean to center the data around zero
         series = np.diff(series)  # Diff each observation making a series stationary
 
+    # Hurst exponent
+    def _hurst_function(N, H, c):
+        return c * N ** H
+
     # Compute the valid lags and corresponding values
     min_lag = min_lag
-    max_lag = max_lag or len(series) - 1  # max_lag = min(max_lag, len(series))
+    max_lag = min(max_lag, len(series))
     lag_sizes = range(min_lag, max_lag)
 
     valid_lags_and_values = [(lag_size, std_of_sums(series, lag_size)) for lag_size in lag_sizes
@@ -71,15 +85,18 @@ def standard_hurst(series: np.array, fitting_method: str = 'mle', min_lag: int =
 
     # Perform fitting based on the selected method
     if fitting_method == 'mle':
-        initial_guess = [0.5, 0]  # Guess for both H_q and c
+        bounds = [(0, 1), (-np.inf, np.inf)]
+        initial_guess = [0.5, 0]  # Guess for both H and c
         result = minimize(neg_log_likelihood, initial_guess,
-                          args=(np.array(valid_lags), np.array(y_values), _hurst_function))
+                          args=(np.array(valid_lags), np.array(y_values), _hurst_function), bounds = bounds)
         H, c = result.x
     elif fitting_method == 'least_squares':
-        _residuals = lambda params, N, y_values: y_values - _hurst_function(N, params[0], params[1])
+        lower_bounds = [0, -np.inf]
+        upper_bounds = [1, np.inf]
+        bounds = (lower_bounds, upper_bounds)
         initial_guess = [0.5, 0]
-        result = least_squares(_residuals, initial_guess,
-                               args=(valid_lags, y_values))  # result = least_squares(residual
+        _residuals = lambda params, N, y_values: y_values - _hurst_function(N, params[0], params[1])
+        result = least_squares(_residuals, initial_guess,args=(valid_lags, y_values), bounds = bounds)
         H, c = result.x
     else:  # Log-log OLS regression fitting method
         log_valid_lags = np.log(valid_lags)
@@ -93,7 +110,7 @@ def standard_hurst(series: np.array, fitting_method: str = 'mle', min_lag: int =
     return H, c, [list(valid_lags), y_values], interpretation
 
 
-def generalized_hurst(series: np.array, moment: int = 1, fitting_method: str = 'mle', min_lag: int = 1,
+def generalized_hurst(series: np.array, moment: int = 1, fitting_method: str = 'mle', min_lag: int = 10,
                       max_lag: int = 1000) -> Tuple[float, float, List[List[float]]]:
     """
     Estimate the generalized Hurst exponent of a time series using the specified method.
@@ -101,7 +118,7 @@ def generalized_hurst(series: np.array, moment: int = 1, fitting_method: str = '
     Parameters
     ----------
     series : list or array-like series
-            Represent time-series data
+            Represents time-series data
     moment : int
         The moment to use in the calculation. Defaults to 1st moment, the mean.
     fitting_method : str, optional
@@ -111,7 +128,7 @@ def generalized_hurst(series: np.array, moment: int = 1, fitting_method: str = '
         - 'mle': Maximum Likelihood Estimation (MLE)
         Default is 'OLS'.
     max_lag : int, optional
-        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 1000.
+        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 500.
 
     Returns
     -------
@@ -124,19 +141,32 @@ def generalized_hurst(series: np.array, moment: int = 1, fitting_method: str = '
         If an invalid fitting_method is provided.
     """
 
-    # Generalised Hurst
-    def _generalized_function(lag, H_q, c):
-        return c * (lag ** H_q)
+    series = series
+    if len(series) < 100:
+        raise ValueError("Length of series cannot be less than 100")
+
+    # Convert to series to array-like if series is not numpy array or pandas Series and handle zeros
+    if not isinstance(series, (np.ndarray, pd.Series)):
+        series = np.array(series, dtype=float)
+    replace_zero = 1e-10
+    series[series == 0] = replace_zero
+
+    # Check for invalid values in the time series
+    if np.any(np.isnan(series)) or np.any(np.isinf(series)):
+        raise ValueError("Time series contains NaN or Inf values")
 
     # Ensure the fitting_method is valid
     if fitting_method not in ['mle', 'least_squares', 'OLS']:
         raise ValueError(f"Unknown method: {fitting_method}. Expected 'mle' or 'least_squares' 'OLS'.")
 
-    # If not, subtract the mean to center the data around zero
-    series = series
+    # Subtract the mean to center the data around zero
     mean = np.mean(series)
     if mean != 0:
         series = (series - mean)
+
+    # Generalised Hurst
+    def _generalized_function(lag, H_q, c):
+        return c * (lag ** H_q)
 
     # Compute the S_q_tau values and valid lags
     min_lag = min_lag
@@ -151,14 +181,18 @@ def generalized_hurst(series: np.array, moment: int = 1, fitting_method: str = '
 
     # Perform fitting based on the selected method
     if fitting_method == 'mle':
-        initial_guess = [0.5, 0]  # Guess for both H_q and c np.mean(S_q_tau_values)
+        initial_guess = [0.5, 0]
+        bounds = [(0, 1), (-np.inf, np.inf)]
         result = minimize(neg_log_likelihood, initial_guess,
-                          args=(np.array(valid_lags), np.array(S_q_tau_values), _generalized_function))
+                          args=(np.array(valid_lags), np.array(S_q_tau_values), _generalized_function), bounds = bounds)
         H_q, c = result.x
     elif fitting_method == 'least_squares':
-        _residuals = lambda params, lag, S_q_tau_values: S_q_tau_values - _generalized_function(lag, params[0], params[1])
         initial_guess = [0.5, 0]
-        result = least_squares(_residuals, initial_guess, args=(valid_lags, S_q_tau_values))
+        lower_bounds = [0, -np.inf]
+        upper_bounds = [1, np.inf]
+        bounds = (lower_bounds, upper_bounds)
+        _residuals = lambda params, lag, S_q_tau_values: S_q_tau_values - _generalized_function(lag, params[0], params[1])
+        result = least_squares(_residuals, initial_guess, args=(valid_lags, S_q_tau_values), bounds = bounds)
         H_q, c = result.x
     else:  # Log-log OLS regression fitting method
         # Log-log regression fitting method
@@ -176,12 +210,26 @@ def generalized_hurst(series: np.array, moment: int = 1, fitting_method: str = '
 if __name__ == '__main__':
 
     # Generate simple random walk series
-    #from util.utils import  simple_series
-    #series = simple_series(length=99999, noise_pct_std=0.02) # avg. daily market volatility
+    from util.generate_series import simple_series
+    series = simple_series(length=99999, noise_pct_std=0.00, seed=70) # avg. daily market volatility
 
-    # Genereate stochastic process with specific trend properties
-    from util.utils import stochastic_process
-    series = stochastic_process(99999, proba=.5, cumprod=False)
+    # Genereate stochastic process with specific long-range properties
+    # from util.generate_series import stochastic_process
+    # series = stochastic_process(length=99999, proba=.5, cumprod=False, seed=40)
+
+    # Hurst
+    H, D, data, interpretation = standard_hurst(series)
+    print(f"Hurst Estimate via Standard Hurst: {H}, D constant: {D if D is not None else 'N/A'}, ({interpretation})")
+
+    # Generalized Hurst
+    H, c, data, interpretation = generalized_hurst(series)
+    print(f"Hurst Estimate via Generalized Hurst: {H}, D constant: {D if D is not None else 'N/A'}, ({interpretation})")
+
+    # Hurst from Rescaled Range
+    from hurst import compute_Hc
+    H, c, data = compute_Hc(series)
+    print(f"Hurst Estimate via R/S: {H}, c constant: {c if c is not None else 'N/A'}, ({interpret_hurst(H)})")
+
 
     # Plot raw series
     plt.figure(figsize=(10, 6))
@@ -192,22 +240,8 @@ if __name__ == '__main__':
     plt.savefig('../plots/random_walk.png', bbox_inches='tight')
     plt.show()
 
-    # Hurst
-    H, D, data, interpretation = standard_hurst(series)
-    print(f"Hurst Estimate via Standard Hurst: {H}, D constant: {D if D is not None else 'N/A'}, ({interpretation})")
-
-    # Generalized Hurst
-    H, c, data, interpretation = generalized_hurst(series)
-    print(f"Hurst Estimate via Standard Hurst: {H}, D constant: {D if D is not None else 'N/A'}, ({interpretation})")
-
-    # Hurst from Rescaled Range
-    from hurst import compute_Hc
-    H, c, data = compute_Hc(series)
-    print(f"Hurst Estimate via R/S: {H}, c constant: {c if c is not None else 'N/A'}, ({interpret_hurst(H)})")
-
     # Plotting Hurst
     fig, axs = plt.subplots(1, 3, figsize=(15, 4))
-
     # Standard Hurst
     H, c, data, _ = standard_hurst(series)
     lag_sizes, y_values = data
@@ -245,3 +279,32 @@ if __name__ == '__main__':
 
     plt.savefig('../plots/hurst.png', bbox_inches='tight')
     plt.show()
+
+
+    # Estimate the Hurst exponent using the standard method and the bootstrap technique
+    from arch.bootstrap import MovingBlockBootstrap
+    print('\n')
+    print('Confidence:')
+
+    def hurst_wrapper(series):
+        H, _, _, _ = standard_hurst(series)
+        # H, _, _, _ = generalized_hurst(series)
+
+        return H
+
+    # Create a bootstrap object with block size, e.g., 10
+    bs = MovingBlockBootstrap(1000, series)
+
+    # Apply the function to the bootstrap object
+    results = bs.apply(hurst_wrapper, 1000) # number of repetitions
+
+    mean_hurst = np.mean(results)
+    std_dev_hurst = np.std(results)
+
+    # Standard 1.96 multiplier for a 95% confidence interval under the assumption of a normal distribution
+    lower_ci = mean_hurst - 1.96 * std_dev_hurst
+    upper_ci = mean_hurst + 1.96 * std_dev_hurst
+
+    print("Bootstrap Mean:", mean_hurst)
+    print("Bootstrap Standard Deviation:", std_dev_hurst)
+    print("95% Confidence Interval:", (lower_ci, upper_ci))
