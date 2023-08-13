@@ -84,8 +84,8 @@ def stochastic_process(length: int = 99999, proba: float = 0.5, min_lag: int = 1
         if i < min_lag + 1:
             direction = np.sign(np.random.randn())
         else:
-            lookback = np.random.randint(min_lag, min(i-1, max_lag) + 1)
-            direction = np.sign(series[i-1] / series[i-1-lookback] - 1.) if cumprod else np.sign(series[i-1] - series[i-1-lookback])
+            lag = np.random.randint(min_lag, min(i-1, max_lag) + 1)
+            direction = np.sign(series[i-1] / series[i-1-lag] - 1.) if cumprod else np.sign(series[i-1] - series[i-1-lag])
             direction *= np.sign(proba - np.random.uniform())
 
         increment = np.abs(np.random.randn())

@@ -39,14 +39,14 @@ def neg_log_likelihood(params, x_values, y_values,func: Callable) -> float:
 
 def std_of_sums(ts: np.array, lag_size: int) -> float:
     """
-    Computes the standard deviation of sums of time series lags of size chunk_size.
+    Computes the standard deviation of sums of time series lags of size lag_size.
 
     Parameters
     ----------
     ts : np.array
         Time series data
     lag_size : int
-        The size of each chunk of the time series
+        The size of each lag of the time series
 
     Returns
     -------
@@ -56,7 +56,7 @@ def std_of_sums(ts: np.array, lag_size: int) -> float:
     if lag_size == 0:
         return np.nan
 
-    # Reshape the array to have a size of (-1, chunk_size) and sum along the second axis
+    # Reshape the array to have a size of (-1, lag_size) and sum along the second axis
     lags = len(ts) // lag_size
     sums = ts[:lags * lag_size].reshape(-1, lag_size).sum(axis=1)
 

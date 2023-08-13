@@ -211,7 +211,7 @@ if __name__ == '__main__':
 
     # Generate simple random walk series
     from util.generate_series import simple_series
-    series = simple_series(length=99999, noise_pct_std=0.00, seed=70) # avg. daily market volatility
+    series = simple_series(length=99999, noise_pct_std=0.02, seed=70) # avg. daily market volatility
 
     # Genereate stochastic process with specific long-range properties
     # from util.generate_series import stochastic_process
