@@ -156,6 +156,4 @@ This tells you everything you need to know for the simplest, typical use cases:
 	95% Confidence Interval: (0.47024512619628983, 0.5085224926738101)
 
 
-![Hurst, generalised and r/s hurst](/plots/random_walk.png)
-
 ![Hurst, generalised and r/s hurst](/plots/hurst.png)
