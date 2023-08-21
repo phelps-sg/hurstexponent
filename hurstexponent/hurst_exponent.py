@@ -282,7 +282,7 @@ if __name__ == '__main__':
 
 
     # Estimate the Hurst exponent using the standard method and the bootstrap technique
-    from arch.bootstrap import MovingBlockBootstrap
+    from arch.bootstrap import MovingBlockBootstrap, StationaryBootstrap
     print('\n')
     print('Confidence:')
 
@@ -292,7 +292,7 @@ if __name__ == '__main__':
 
         return H
 
-    # Create a bootstrap object with block size, e.g., 10
+    # Create a bootstrap object with block size, e.g., 100
     bs = MovingBlockBootstrap(1000, series)
 
     # Apply the function to the bootstrap object
@@ -301,7 +301,7 @@ if __name__ == '__main__':
     mean_hurst = np.mean(results)
     std_dev_hurst = np.std(results)
 
-    # Standard 1.96 multiplier for a 95% confidence interval under the assumption of a normal distribution
+    # Standard 1.96 multiplier for a 95% confidence interval under the assumption of a normality
     lower_ci = mean_hurst - 1.96 * std_dev_hurst
     upper_ci = mean_hurst + 1.96 * std_dev_hurst
 

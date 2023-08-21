@@ -5,7 +5,7 @@ with open("README.md", "r") as file:
 
 setuptools.setup(
     name="hurstexponent",
-    version="0.1.1",
+    version="1.0.0",
     author="Anastasia Bugeenko",
     author_email="anabugaenko@gmail.com",
     license="MIT",
