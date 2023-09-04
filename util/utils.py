@@ -4,29 +4,29 @@ from typing import Callable, Iterable
 
 
 # Helper functions
-def neg_log_likelihood(params, x_values, y_values,func: Callable) -> float:
+def neg_log_likelihood(params, x_values, y_values, func: Callable) -> float:
     """
-        Compute the negative log-likelihood for a given model and parameters.
+    Compute the negative log-likelihood for a given model and parameters.
 
-        The function calculates the negative log-likelihood between the observed y-values and the predicted y-values obtained from the specified function and parameters.
+    The function calculates the negative log-likelihood between the observed y-values and the predicted y-values obtained from the specified function and parameters.
 
-        Parameters
-        ----------
-        params : Iterable[float]
-            The parameters of the model function. They are passed to the function 'func' for evaluation.
-        x_values : Iterable[float]
-            The independent variable values.
-        y_values : Iterable[float]
-            The observed dependent variable values corresponding to 'x_values'.
-        func : Callable
-            The model function that takes 'x_values' and '*params' as input and returns the predicted y-values.
+    Parameters
+    ----------
+    params : Iterable[float]
+        The parameters of the model function. They are passed to the function 'func' for evaluation.
+    x_values : Iterable[float]
+        The independent variable values.
+    y_values : Iterable[float]
+        The observed dependent variable values corresponding to 'x_values'.
+    func : Callable
+        The model function that takes 'x_values' and '*params' as input and returns the predicted y-values.
 
-        Returns
-        -------
-        float
-            The negative log-likelihood value for the given model and parameters.
+    Returns
+    -------
+    float
+        The negative log-likelihood value for the given model and parameters.
 
-        """
+    """
 
     y_pred = func(x_values, *params)
     residuals = y_values - y_pred
@@ -70,7 +70,7 @@ def std_of_sums(ts: np.array, lag_size: int) -> float:
 
     # Reshape the array to have a size of (-1, lag_size) and sum along the second axis
     lags = len(ts) // lag_size
-    sums = ts[:lags * lag_size].reshape(-1, lag_size).sum(axis=1)
+    sums = ts[: lags * lag_size].reshape(-1, lag_size).sum(axis=1)
 
     return np.std(sums)
 
@@ -118,7 +118,7 @@ def structure_function(ts: np.array, moment: int, lag: int) -> float:
     diffs = np.abs(calculate_diffs(ts, lag))
     ts_abs_moment = np.abs(ts[:-lag]) ** moment
     if diffs.size != 0 and np.any(ts_abs_moment):
-        return np.mean(diffs ** moment) / np.mean(ts_abs_moment)
+        return np.mean(diffs**moment) / np.mean(ts_abs_moment)
     else:
         return np.nan
 
