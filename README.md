@@ -2,7 +2,7 @@
 A simple statistical package for estimating the long-term memory of time series data.  
 
 #
-This repository contains a Python class for estimating the Hurst exponent of a time series. The Hurst exponent is used as a measure of long-term memory of time series and relates to both the scaling of the standard deviation of sums of N successive events and the autocorrelations of the time series given the rate at which these decrease as the lag between pairs of values increases.
+This repository contains a Python Package for estimating the Hurst exponent of a time series. The Hurst exponent is used as a measure of long-term memory of time series and relates to both the scaling of the standard deviation of sums of N successive events and the autocorrelations of the time series given the rate at which these decrease as the lag between pairs of values increases.
 
 Feel free to raise an issue if you find a problem; this repository is actively being developed and any tickets will be addressed in order of importance.
 
