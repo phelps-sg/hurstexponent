@@ -374,6 +374,7 @@ if __name__ == "__main__":
         "generalised (least_squares)": lambda s: generalized_hurst(
             s, fitting_method="least_squares"
         ),
+        "rescaled range": compute_Hc
     }
 
     for estimator_name, estimator_fn in estimators.items():
