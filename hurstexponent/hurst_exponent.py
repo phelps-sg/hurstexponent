@@ -296,7 +296,7 @@ if __name__ == '__main__':
     bs = MovingBlockBootstrap(1000, series)
 
     # Apply the function to the bootstrap object
-    results = bs.apply(hurst_wrapper, 1000) # number of repetitions
+    results = bs.apply(hurst_wrapper, 1000)  # number of repetitions
 
     mean_hurst = np.mean(results)
     std_dev_hurst = np.std(results)
