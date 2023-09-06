@@ -358,16 +358,37 @@ if __name__ == "__main__":
         np.random.seed(seed)
         return np.array(
             [
-                estimator(simple_series(length=99999, volatility=0.00002))[0]
+                estimator(simple_series(length=2000, volatility=0.00002))[0]
                 for _repetition in range(reps)
             ]
         )
 
-    results = bootstrap(generalized_hurst, reps=1000, seed=42)
+    estimators = {
+        "standard (mle)": standard_hurst,
+        "standard (OLS)": lambda s: standard_hurst(s, fitting_method="OLS"),
+        "standard (least_squares)": lambda s: standard_hurst(
+            s, fitting_method="least_squares"
+        ),
+        "generalised (mle)": generalized_hurst,
+        "generalised (OLS)": lambda s: generalized_hurst(s, fitting_method="OLS"),
+        "generalised (least_squares)": lambda s: generalized_hurst(
+            s, fitting_method="least_squares"
+        ),
+    }
 
-    lower_ci = np.percentile(results, 5)
-    upper_ci = np.percentile(results, 95)
+    for estimator_name, estimator_fn in estimators.items():
+        print()
+        print(f"Confidence interval for {estimator_name}")
+        print("-" * 80)
+        print()
 
-    print(pd.DataFrame(results, columns=["^H"]).describe())
-    print()
-    print("95% Confidence Interval:", (lower_ci, upper_ci))
+        results = bootstrap(estimator_fn, reps=1000, seed=42)
+
+        lower_ci = np.percentile(results, 5)
+        upper_ci = np.percentile(results, 95)
+
+        print(pd.DataFrame(results, columns=["^H"]).describe())
+
+        print()
+        print("95% Confidence Interval:", (lower_ci, upper_ci))
+        print()
