@@ -280,7 +280,6 @@ if __name__ == '__main__':
     plt.savefig('../plots/hurst.png', bbox_inches='tight')
     plt.show()
 
-
     # Estimate the Hurst exponent using the standard method and the bootstrap technique
     from arch.bootstrap import MovingBlockBootstrap, StationaryBootstrap
     print('\n')
