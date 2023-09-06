@@ -286,17 +286,11 @@ if __name__ == '__main__':
     print('\n')
     print('Confidence:')
 
-    def hurst_wrapper(series):
-        H, _, _, _ = standard_hurst(series)
-        # H, _, _, _ = generalized_hurst(series)
-
-        return H
-
     # Create a bootstrap object with block size, e.g., 100
     bs = MovingBlockBootstrap(1000, series)
 
     # Apply the function to the bootstrap object
-    results = bs.apply(hurst_wrapper, reps=1000)
+    results = bs.apply(lambda s: standard_hurst(s)[0], reps=1000)
 
     mean_hurst = np.mean(results)
     std_dev_hurst = np.std(results)
