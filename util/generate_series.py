@@ -4,17 +4,18 @@ from typing import List
 
 
 # Synthetic data generators
-def simple_series(length: int = 99999, noise_pct_std: float = 0.001, seed: int = None) -> np.ndarray:
+def simple_series(length: int = 99999, initial_value: float = 1.0, volatility: float = 0.001, seed: int = None) -> np.ndarray:
     """
-    Generate a synthetic time series using a random walk model with added Gaussian noise
+    Generate a geometric random walk with Gaussian innovations.
 
     Parameters
     ----------
     length : int, optional
         The length of the time series to generate. Default is 1000.
-    noise_pct_std : float, optional
-        The standard deviation of the Gaussian noise added to the series, expressed as a percentage of the standard
-        deviation of the original random walk. Default is 0.001.
+    initial_value : int
+        The initial value of the series
+    volatility: float, optional
+        The volatility of returns
     seed : {None, int, array_like, BitGenerator}, optional Random seed used to initialize the pseudo-random number
     generator or an instantized BitGenerator.
 
@@ -24,18 +25,10 @@ def simple_series(length: int = 99999, noise_pct_std: float = 0.001, seed: int =
         The generated time series.
     """
 
-    # Generate a series of random changes
     if seed is not None:
         np.random.seed(seed)
-    random_changes = 1 + np.random.randn(length) / 1000
-
-    # Create a non-stationary random walk series and then difference it to make it stationary
-    series = np.cumprod(random_changes)  # create a random walk from random changes
-
-    # Scale the random changes by the desired standard deviation as a percentage of the mean value
-    series += np.random.randn(length) * noise_pct_std * np.std(series)
-
-    return series
+    returns = np.random.normal(size=length, scale=volatility)
+    return initial_value * np.exp(np.cumsum(returns))
 
 
 # Much of this function generalises Dmitry Motti's implementation of a random walk process, specifically around line 197
