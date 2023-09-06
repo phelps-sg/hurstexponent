@@ -358,7 +358,7 @@ if __name__ == "__main__":
         np.random.seed(seed)
         return np.array(
             [
-                estimator(simple_series(length=2000, volatility=0.00002))[0]
+                estimator(simple_series(length=2048, volatility=0.00002))[0]
                 for _repetition in range(reps)
             ]
         )
@@ -374,7 +374,7 @@ if __name__ == "__main__":
         "generalised (least_squares)": lambda s: generalized_hurst(
             s, fitting_method="least_squares"
         ),
-        "rescaled range": compute_Hc
+        "rescaled range": lambda s: compute_Hc(s, kind="price")
     }
 
     for estimator_name, estimator_fn in estimators.items():
@@ -383,7 +383,7 @@ if __name__ == "__main__":
         print("-" * 80)
         print()
 
-        results = bootstrap(estimator_fn, reps=1000, seed=42)
+        results = bootstrap(estimator_fn, reps=10000, seed=42)
 
         lower_ci = np.percentile(results, 2.5)
         upper_ci = np.percentile(results, 97.5)
