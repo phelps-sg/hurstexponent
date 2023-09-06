@@ -363,11 +363,24 @@ if __name__ == "__main__":
             ]
         )
 
-    results = bootstrap(generalized_hurst, reps=1000, seed=42)
+    estimators = {
+        "standard": standard_hurst,
+        "generalised": generalized_hurst
+    }
 
-    lower_ci = np.percentile(results, 5)
-    upper_ci = np.percentile(results, 95)
+    for estimator_name, estimator_fn in estimators.items():
+        print()
+        print(f"Confidence interval for {estimator_name}")
+        print("-" * 80)
+        print()
 
-    print(pd.DataFrame(results, columns=["^H"]).describe())
-    print()
-    print("95% Confidence Interval:", (lower_ci, upper_ci))
+        results = bootstrap(estimator_fn, reps=1000, seed=42)
+
+        lower_ci = np.percentile(results, 5)
+        upper_ci = np.percentile(results, 95)
+
+        print(pd.DataFrame(results, columns=["^H"]).describe())
+
+        print()
+        print("95% Confidence Interval:", (lower_ci, upper_ci))
+        print()
