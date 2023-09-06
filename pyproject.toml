@@ -28,7 +28,6 @@ typing = "^3.5"
 statsmodels = "^0.14.0"
 hurst = "^0.0.5"
 matplotlib = "^3.7.2"
-arch = "^6.1.0"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.17.5"
