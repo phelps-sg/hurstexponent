@@ -68,7 +68,7 @@ def bootstrap(
 ) -> NDArray[np.float64]:
     """
     Perform a bootstrap where we compute the specified Hurst estimator for a
-    white noise process with the specified sample size and volatility.
+    white noise process (H=0.5) with the specified sample size and volatility.
     We compute each estimate iid. for the same data generation process,
     and fix the seed once ahead of generating the iid. samples.
     """
@@ -98,8 +98,11 @@ def test_within_limits(_estimator_name: str, estimator: Estimator):
 
 @pytest.mark.parametrize(["_estimator_name", "estimator"], all_estimators())
 def test_confidence_interval(_estimator_name: str, estimator: Estimator):
-    """Check whether the estimator gives a confidence interval whose width is within
-    the worst-case reported in the literature."""
+    """Check whether the estimator gives a 95% confidence interval whose bounds are within
+    the worst-case reported in the literature.  See Weron, Rafał.
+    "Estimating long-range dependence: finite sample properties and confidence intervals."
+    Physica A: Statistical Mechanics and its Applications 312.1-2 (2002): 285-299.
+    """
     point_estimates = bootstrap(estimator, length=2048)
     lower_ci = np.percentile(point_estimates, 2.5)
     upper_ci = np.percentile(point_estimates, 97.5)
