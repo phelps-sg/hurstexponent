@@ -40,7 +40,7 @@ estimators: List[Tuple[str, Estimator]] = [
 @lru_cache
 def bootstrap(
     estimator: Estimator,
-    reps: int = 1000,
+    reps: int = 10000,
     seed: int = 42,
     length: int = 2048,
     volatility: float = 0.00002,
