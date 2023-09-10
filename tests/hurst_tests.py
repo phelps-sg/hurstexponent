@@ -1,6 +1,8 @@
+""" Tests for hurst estimators """
+import functools
 from collections.abc import Callable
 from functools import lru_cache
-from typing import List, Any
+from typing import List, Any, Iterable
 from numpy.typing import NDArray
 
 
@@ -11,30 +13,49 @@ from typing_extensions import Tuple
 from hurstexponent import standard_hurst, generalized_hurst
 from util.generate_series import simple_series
 
-Estimator = Callable[[Any], Tuple[float, float, Any]]
+Estimator = Callable[[NDArray[np.float64]], Tuple[float, float, Any]]
 
-estimators: List[Tuple[str, Estimator]] = [
-    ("standard (mle)", lambda s: standard_hurst(s, fitting_method="mle")),
-    (
-        "standard (mle, initial_guess=0.4)",
-        lambda s: standard_hurst(s, fitting_method="mle", initial_guess_H=0.4),
-    ),
-    (
-        "standard (mle, initial_guess=0.6)",
-        lambda s: standard_hurst(s, fitting_method="mle", initial_guess_H=0.6),
-    ),
-    ("standard (OLS)", lambda s: standard_hurst(s, fitting_method="OLS")),
-    (
-        "standard (least_squares)",
-        lambda s: standard_hurst(s, fitting_method="least_squares"),
-    ),
-    ("generalised (mle)", lambda s: generalized_hurst(s, fitting_method="mle")),
-    ("generalised (OLS)", lambda s: generalized_hurst(s, fitting_method="OLS")),
-    (
-        "generalised (least_squares)",
-        lambda s: generalized_hurst(s, fitting_method="least_squares"),
-    ),
-]
+
+def estimators_with_all_fitting_methods(
+    base_name: str,
+    base_estimator: Callable,
+    fitting_methods: Iterable[str] = ("mle", "least_squares", "OLS"),
+) -> List[Tuple[str, Estimator]]:
+    """Create estimators for all fitting methods."""
+    return [
+        (
+            f"{base_name} [{fitting_method}]",
+            functools.partial(base_estimator, fitting_method=fitting_method),
+        )
+        for fitting_method in fitting_methods
+    ]
+
+
+def estimators_with_initial_guesses(
+    base_name: str,
+    base_estimator: Callable,
+    initial_guesses: Iterable[float] = (0.4, 0.6),
+) -> List[Tuple[str, Estimator]]:
+    """Create estimators for all initial guesses of H."""
+    return [
+        (
+            f"{base_name} [mle initial_guess={guess}]",
+            functools.partial(
+                base_estimator, fitting_method="mle", initial_guess_H=guess
+            ),
+        )
+        for guess in initial_guesses
+    ]
+
+
+@lru_cache
+def all_estimators() -> List[Tuple[str, Estimator]]:
+    """List of all estimators used for tests in the form [(estimator_name, estimator_fn), ...]"""
+    return (
+        estimators_with_all_fitting_methods("standard", standard_hurst)
+        + estimators_with_all_fitting_methods("generalised", generalized_hurst)
+        + estimators_with_initial_guesses("standard", standard_hurst)
+    )
 
 
 @lru_cache
@@ -44,7 +65,7 @@ def bootstrap(
     seed: int = 42,
     length: int = 2048,
     volatility: float = 0.00002,
-) -> NDArray:
+) -> NDArray[np.float64]:
     """
     Perform a bootstrap where we compute the specified Hurst estimator for a
     white noise process with the specified sample size and volatility.
@@ -60,23 +81,23 @@ def bootstrap(
     )
 
 
-@pytest.mark.parametrize(["estimator_name", "estimator"], estimators)
-def test_unbiased_estimator(estimator_name: str, estimator: Estimator):
+@pytest.mark.parametrize(["_estimator_name", "estimator"], all_estimators())
+def test_unbiased_estimator(_estimator_name: str, estimator: Estimator):
     """Check whether the estimator gives an unbiased estimate of H=0.5 for white noise."""
     point_estimates = bootstrap(estimator)
     assert np.isclose(np.mean(point_estimates), 0.5, rtol=1e-2)
 
 
-@pytest.mark.parametrize(["estimator_name", "estimator"], estimators)
-def test_within_limits(estimator_name: str, estimator: Estimator):
+@pytest.mark.parametrize(["_estimator_name", "estimator"], all_estimators())
+def test_within_limits(_estimator_name: str, estimator: Estimator):
     """Check whether the estimator gives valid point estimates within interval (0, 1)."""
     point_estimates = bootstrap(estimator)
     assert np.min(point_estimates) >= 0.0
     assert np.max(point_estimates) <= 1.0
 
 
-@pytest.mark.parametrize(["estimator_name", "estimator"], estimators)
-def test_confidence_interval(estimator_name: str, estimator: Estimator):
+@pytest.mark.parametrize(["_estimator_name", "estimator"], all_estimators())
+def test_confidence_interval(_estimator_name: str, estimator: Estimator):
     """Check whether the estimator gives a confidence interval whose width is within
     the worst-case reported in the literature."""
     point_estimates = bootstrap(estimator, length=2048)
