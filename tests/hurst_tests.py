@@ -57,12 +57,12 @@ def bootstrap(
 @pytest.mark.parametrize(["estimator_name", "estimator"], estimators)
 def test_unbiased_estimator(estimator_name: str, estimator: Estimator):
     """Check whether estimator gives unbiased estimate of H=0.5 for white noise"""
-    results = bootstrap(estimator)
-    assert np.isclose(np.mean(results), 0.5, rtol=1e-2)
+    point_estimates = bootstrap(estimator)
+    assert np.isclose(np.mean(point_estimates), 0.5, rtol=1e-2)
 
 
 @pytest.mark.parametrize(["estimator_name", "estimator"], estimators)
 def test_within_limits(estimator_name: str, estimator: Estimator):
-    results = bootstrap(estimator)
-    assert np.min(results) >= 0.0
-    assert np.max(results) <= 1.0
+    point_estimates = bootstrap(estimator)
+    assert np.min(point_estimates) >= 0.0
+    assert np.max(point_estimates) <= 1.0
