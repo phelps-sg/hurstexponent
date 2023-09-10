@@ -16,7 +16,7 @@ Estimator = Callable[[Any], Tuple[float, float, Any]]
 estimators: List[Tuple[str, Estimator]] = [
     ("standard (mle)", lambda s: standard_hurst(s, fitting_method="mle")),
     (
-        "standard (mle, initial_guess=0.2)",
+        "standard (mle, initial_guess=0.4)",
         lambda s: standard_hurst(s, fitting_method="mle", initial_guess_H=0.4),
     ),
     (
@@ -45,6 +45,12 @@ def bootstrap(
     length: int = 2048,
     volatility: float = 0.00002,
 ) -> NDArray:
+    """
+    Perform a bootstrap where we compute the specified Hurst estimator for a
+    white noise process with the specified sample size and volatility.
+    We compute each estimate iid. for the same data generation process,
+    and fix the seed once ahead of generating the iid. samples.
+    """
     np.random.seed(seed)
     return np.array(
         [
@@ -56,13 +62,25 @@ def bootstrap(
 
 @pytest.mark.parametrize(["estimator_name", "estimator"], estimators)
 def test_unbiased_estimator(estimator_name: str, estimator: Estimator):
-    """Check whether estimator gives unbiased estimate of H=0.5 for white noise"""
+    """Check whether the estimator gives an unbiased estimate of H=0.5 for white noise."""
     point_estimates = bootstrap(estimator)
     assert np.isclose(np.mean(point_estimates), 0.5, rtol=1e-2)
 
 
 @pytest.mark.parametrize(["estimator_name", "estimator"], estimators)
 def test_within_limits(estimator_name: str, estimator: Estimator):
+    """Check whether the estimator gives valid point estimates within interval (0, 1)."""
     point_estimates = bootstrap(estimator)
     assert np.min(point_estimates) >= 0.0
     assert np.max(point_estimates) <= 1.0
+
+
+@pytest.mark.parametrize(["estimator_name", "estimator"], estimators)
+def test_confidence_interval(estimator_name: str, estimator: Estimator):
+    """Check whether the estimator gives a confidence interval whose width is within
+    the worst-case reported in the literature."""
+    point_estimates = bootstrap(estimator, length=2048)
+    lower_ci = np.percentile(point_estimates, 2.5)
+    upper_ci = np.percentile(point_estimates, 97.5)
+    assert upper_ci < 0.75
+    assert lower_ci > 0.25
