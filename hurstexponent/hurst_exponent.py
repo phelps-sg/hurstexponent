@@ -17,6 +17,7 @@ def standard_hurst(
     fitting_method: str = "mle",
     min_lag: int = 10,
     max_lag: int = 1000,
+    initial_guess_H: float = 0.5
 ) -> Tuple[float, float, List[float]]:
     """
     Estiamte the Hurst exponent of a time series from the standard deviation of sums of N successive events using
@@ -34,6 +35,8 @@ def standard_hurst(
         Default is 'OLS'.
     max_lag: int, optional
         The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 500.
+    initial_guess_H: float, optional
+        The initial guess of H for mle fitting
 
     Returns
     -------
@@ -101,7 +104,7 @@ def standard_hurst(
     # Perform fitting based on the selected method
     if fitting_method == "mle":
         bounds = [(0, 1), (-np.inf, np.inf)]
-        initial_guess = [0.5, 0]  # Guess for both H and c
+        initial_guess = [initial_guess_H, 0]  # Guess for both H and c
         result = minimize(
             neg_log_likelihood,
             initial_guess,
