@@ -23,8 +23,6 @@ def simple_series(length: int = 99999, noise_pct_std: float = 0.001, seed: int =
     numpy.ndarray
         The generated time series.
     """
-
-    # Generate a series of random changes
     if seed is not None:
         np.random.seed(seed)
     random_changes = 1 + np.random.randn(length) / 1000
@@ -73,7 +71,6 @@ def stochastic_process(length: int = 99999, proba: float = 0.5, min_lag: int = 1
         max_lag = length
         warnings.warn("max_lag has been set to the length of the series.")
 
-    # Set the seed for the random number generator
     if seed is not None:
         np.random.seed(seed)
 

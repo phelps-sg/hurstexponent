@@ -4,7 +4,7 @@ with open("README.md", "r") as file:
     long_description = file.read()
 
 setuptools.setup(
-    name="hurstexponent",
+    name="hurst_exponent",
     version="1.0.0",
     author="Anastasia Bugeenko",
     author_email="anabugaenko@gmail.com",

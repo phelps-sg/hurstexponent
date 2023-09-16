@@ -1,40 +1,29 @@
 import numpy as np
-from scipy.stats import norm
-from typing import Callable, Iterable
 
 
 # Helper functions
-def neg_log_likelihood(params, x_values, y_values,func: Callable) -> float:
+def hurst_exponent(N: float, c: float, H: float) -> float:
     """
-        Compute the negative log-likelihood for a given model and parameters.
+    Computes the value of the Hurst exponent function.
 
-        The function calculates the negative log-likelihood between the observed y-values and the predicted y-values obtained from the specified function and parameters.
+    Parameters
+    ----------
+    N : float
+        Input value, representing the number of events or the scale of the data.
+    c : float
+        Proportionality constant.
+    H : float
+        Hurst exponent. Values between 0 and 0.5 indicate anti-persistent behavior,
+        values around 0.5 suggest random behavior (like Brownian motion),
+        while values between 0.5 and 1 indicate persistent behavior.
 
-        Parameters
-        ----------
-        params : Iterable[float]
-            The parameters of the model function. They are passed to the function 'func' for evaluation.
-        x_values : Iterable[float]
-            The independent variable values.
-        y_values : Iterable[float]
-            The observed dependent variable values corresponding to 'x_values'.
-        func : Callable
-            The model function that takes 'x_values' and '*params' as input and returns the predicted y-values.
+    Returns
+    -------
+    float
+        Computed value of the Hurst exponent function.
+    """
 
-        Returns
-        -------
-        float
-            The negative log-likelihood value for the given model and parameters.
-
-        """
-
-    y_pred = func(x_values, *params)
-    residuals = y_values - y_pred
-    std_dev_residuals = np.std(residuals)
-    loglikelihoods = norm.logpdf(residuals, loc=0, scale=std_dev_residuals)
-    loglikelihood = -np.sum(loglikelihoods)  # sum over all data points
-
-    return loglikelihood
+    return c * N ** H
 
 
 # def std_of_sums(ts: np.array, chunk_size: int) -> float:
@@ -49,6 +38,26 @@ def neg_log_likelihood(params, x_values, y_values,func: Callable) -> float:
 #         if len(chunk) == chunk_size:  # If we have a full chunk of size chunk_size
 #             sums.append(np.sum(chunk))  # Sum up the chunk and add to the list
 #     return np.std(sums)
+def get_sums_of_chunks(series: np.array, N: int) -> np.array:
+    """
+    Reshapes a series into chunks of size N and sums each chunk.
+
+    Parameters
+    ----------
+    series : np.array
+        The time series to process
+    N : int
+        Chunk size
+
+    Returns
+    -------
+    np.array
+        Summed values of each chunk
+    """
+    reshaped_series = series[:len(series)//N*N].reshape(-1, N)
+    return np.sum(reshaped_series, axis=1)
+
+
 def std_of_sums(ts: np.array, lag_size: int) -> float:
     """
     Computes the standard deviation of sums of time series lags of size lag_size.
@@ -68,10 +77,7 @@ def std_of_sums(ts: np.array, lag_size: int) -> float:
     if lag_size == 0:
         return np.nan
 
-    # Reshape the array to have a size of (-1, lag_size) and sum along the second axis
-    lags = len(ts) // lag_size
-    sums = ts[:lags * lag_size].reshape(-1, lag_size).sum(axis=1)
-
+    sums = get_sums_of_chunks(ts, lag_size)
     return np.std(sums)
 
 
@@ -98,7 +104,7 @@ def calculate_diffs(ts: np.array, lag: int) -> np.ndarray:
 def structure_function(ts: np.array, moment: int, lag: int) -> float:
     """
     Calculate the structure function for a given moment and lag, defined as the mean of the absolute differences
-    to the power of the specified moment divided by the mean of absolute ts to the power of the specified moment.
+    to the power of the specified moment.
 
     Parameters
     ----------
@@ -118,7 +124,7 @@ def structure_function(ts: np.array, moment: int, lag: int) -> float:
     diffs = np.abs(calculate_diffs(ts, lag))
     ts_abs_moment = np.abs(ts[:-lag]) ** moment
     if diffs.size != 0 and np.any(ts_abs_moment):
-        return np.mean(diffs ** moment) / np.mean(ts_abs_moment)
+        return np.mean(diffs ** moment)
     else:
         return np.nan
 
@@ -137,8 +143,6 @@ def interpret_hurst(H: float) -> str:
     str
         Interpretation of Hurst Exponent.
     """
-    H = round(H, 2)
-
     if not 0 <= H <= 1:
         return "Hurst Exponent not in a valid range [0, 1].  Series may not be a long memory process"
     if H == 0.5:
