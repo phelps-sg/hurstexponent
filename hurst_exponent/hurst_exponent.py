@@ -59,7 +59,7 @@ def standard_hurst(series: np.array, nonlinear_fit_method: str = 'MLE', min_lag:
     # Check if the time series is stationary
     mean = np.mean(series)
     if not np.isclose(mean, 0.0):
-        # Convert noise like time series to random walk like time series by subtracting mean to center data around zero
+        # Subtracting mean to center data around zero
         series = (series - mean)
         # Diff each observation making a series stationary
         series = np.diff(series)
@@ -77,16 +77,16 @@ def standard_hurst(series: np.array, nonlinear_fit_method: str = 'MLE', min_lag:
     if not valid_lags or not y_values:
         return np.nan, np.nan, [[], []]
 
+    # Perform fitting based on the selected method and return fitted object
     xy_df = pd.DataFrame({
         'x_values': valid_lags,
         'y_values': y_values
     })
 
-    # Perform fitting based on the selected method and return fitted object
     if nonlinear_fit_method == 'MLE':
-        standard_hurst = Fit(xy_df)
+        standard_hurst = Fit(xy_df, xmin_distance='BIC')
     else:
-        standard_hurst = Fit(xy_df, nonlinear_fit_method='Least_squares')
+        standard_hurst = Fit(xy_df, nonlinear_fit_method=nonlinear_fit_method, xmin_distance='BIC')
 
     return standard_hurst
 
@@ -143,8 +143,8 @@ def generalized_hurst(series: np.array, moment: int = 1, nonlinear_fit_method: s
         raise ValueError("Time series contains NaN or Inf values")
 
     # Ensure the fitting_method is valid
-    if nonlinear_fit_method not in ['MLE', 'Least_squares', 'OLS']:
-        raise ValueError(f"Unknown method: {nonlinear_fit_method}. Expected 'MLE' or 'Least_squares' 'OLS'.")
+    if nonlinear_fit_method not in ['MLE', 'Least_squares']:
+        raise ValueError(f"Unknown method: {nonlinear_fit_method}. Expected 'MLE' or 'Least_squares'.")
 
     # Subtract the mean to center the data around zero
     mean = np.mean(series)
@@ -180,9 +180,9 @@ def generalized_hurst(series: np.array, moment: int = 1, nonlinear_fit_method: s
     })
 
     if nonlinear_fit_method == 'MLE':
-        generalized_hurst = Fit(xy_df)
+        generalized_hurst = Fit(xy_df, xmin_distance='BIC')
     else:
-        generalized_hurst = Fit(xy_df, nonlinear_fit_method='Least_squares')
+        generalized_hurst = Fit(xy_df, nonlinear_fit_method=nonlinear_fit_method, xmin_distance='BIC')
 
     # TODO: Remove below
     # Fit custom function
@@ -199,12 +199,12 @@ def generalized_hurst(series: np.array, moment: int = 1, nonlinear_fit_method: s
 if __name__ == '__main__':
 
     # Generate simple random walk series
-    from util.generate_series import simple_series
-    series = simple_series(length=99999, noise_pct_std=0.02, seed=70) # avg. daily market volatility
+    # from util.generate_series import simple_series
+    # series = simple_series(length=99999, seed=70)
 
     # Genereate stochastic process with specific long-range properties
-    # from util.generate_series import stochastic_process
-    # series = stochastic_process(length=99999, proba=.5, cumprod=False, seed=40)
+    from util.generate_series import stochastic_process
+    series = stochastic_process(length=99999, proba=.3, cumprod=False, seed=40)
 
     # def acf(series: pd.Series, lags: int) -> List:
     #     """
@@ -238,7 +238,7 @@ if __name__ == '__main__':
 
     # Standard Hurst
     print('Standard Hurst')
-    hurst = standard_hurst(series) # nonlinear_fit_method='Least_squares'
+    hurst = standard_hurst(series,  max_lag=1000) # nonlinear_fit_method='Least_squares'
     hurst.powerlaw.print_fitted_results()
     hurst.powerlaw.plot_fit()
     interpretation = interpret_hurst(hurst.powerlaw.params.alpha)
@@ -248,7 +248,7 @@ if __name__ == '__main__':
 
     # Generalized Hurst
     print('Generalized Fit')
-    generalized_hurst = generalized_hurst(series, nonlinear_fit_method='Least_squares')
+    generalized_hurst = generalized_hurst(series, max_lag=1000) # nonlinear_fit_method='Least_squares'
     generalized_hurst.powerlaw.print_fitted_results()
     generalized_hurst.powerlaw.plot_fit()
     interpretation = interpret_hurst(generalized_hurst.powerlaw.params.alpha)
