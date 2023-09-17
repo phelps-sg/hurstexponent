@@ -23,7 +23,7 @@ def hurst_exponent(N: float, c: float, H: float) -> float:
         Computed value of the Hurst exponent function.
     """
 
-    return c * N ** H
+    return c * N**H
 
 
 # def std_of_sums(ts: np.array, chunk_size: int) -> float:
@@ -54,7 +54,7 @@ def get_sums_of_chunks(series: np.array, N: int) -> np.array:
     np.array
         Summed values of each chunk
     """
-    reshaped_series = series[:len(series)//N*N].reshape(-1, N)
+    reshaped_series = series[: len(series) // N * N].reshape(-1, N)
     return np.sum(reshaped_series, axis=1)
 
 
@@ -124,7 +124,7 @@ def structure_function(ts: np.array, moment: int, lag: int) -> float:
     diffs = np.abs(calculate_diffs(ts, lag))
     ts_abs_moment = np.abs(ts[:-lag]) ** moment
     if diffs.size != 0 and np.any(ts_abs_moment):
-        return np.mean(diffs ** moment)
+        return np.mean(diffs**moment)
     else:
         return np.nan
 

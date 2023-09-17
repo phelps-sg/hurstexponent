@@ -39,7 +39,14 @@ def simple_series(length: int = 99999, noise_pct_std: float = 0.002, seed: int =
 # Much of this function generalises Dmitry Motti's implementation of a random walk process, specifically around line 197
 # at https://github.com/Mottl/hurst/blob/master/hurst/__init__.py. Key improvements around proba, which appears stale in
 # the latter.
-def stochastic_process(length: int = 99999, proba: float = 0.5, min_lag: int = 10, max_lag: int = 100, cumprod: bool = False, seed: int = None) -> List[float]:
+def stochastic_process(
+    length: int = 99999,
+    proba: float = 0.5,
+    min_lag: int = 10,
+    max_lag: int = 100,
+    cumprod: bool = False,
+    seed: int = None,
+) -> List[float]:
     """
     Generates a stochastic process
 
@@ -64,8 +71,8 @@ def stochastic_process(length: int = 99999, proba: float = 0.5, min_lag: int = 1
     series : List[float]
         Generated random walk process.
     """
-    assert(min_lag >= 1)
-    assert(max_lag >= min_lag)
+    assert min_lag >= 1
+    assert max_lag >= min_lag
 
     if max_lag > length:
         max_lag = length
@@ -75,20 +82,24 @@ def stochastic_process(length: int = 99999, proba: float = 0.5, min_lag: int = 1
         np.random.seed(seed)
 
     series = np.zeros(length, dtype=float)
-    series[0] = 1. if cumprod else 0.
+    series[0] = 1.0 if cumprod else 0.0
 
     for i in range(1, length):
         if i < min_lag + 1:
             direction = np.sign(np.random.randn())
         else:
-            lag = np.random.randint(min_lag, min(i-1, max_lag) + 1)
-            direction = np.sign(series[i-1] / series[i-1-lag] - 1.) if cumprod else np.sign(series[i-1] - series[i-1-lag])
+            lag = np.random.randint(min_lag, min(i - 1, max_lag) + 1)
+            direction = (
+                np.sign(series[i - 1] / series[i - 1 - lag] - 1.0)
+                if cumprod
+                else np.sign(series[i - 1] - series[i - 1 - lag])
+            )
             direction *= np.sign(proba - np.random.uniform())
 
         increment = np.abs(np.random.randn())
         if cumprod:
-            series[i] = series[i-1] * np.abs(1 + increment / 1000. * direction)
+            series[i] = series[i - 1] * np.abs(1 + increment / 1000.0 * direction)
         else:
-            series[i] = series[i-1] + increment * direction
+            series[i] = series[i - 1] + increment * direction
 
     return series
