@@ -4,7 +4,7 @@ from typing import List
 
 
 # Synthetic data generators
-def simple_series(length: int = 99999, noise_pct_std: float = 0.001, seed: int = None) -> np.ndarray:
+def simple_series(length: int = 99999, noise_pct_std: float = 0.002, seed: int = None) -> np.ndarray:
     """
     Generate a synthetic time series using a random walk model with added Gaussian noise
 
@@ -14,7 +14,7 @@ def simple_series(length: int = 99999, noise_pct_std: float = 0.001, seed: int =
         The length of the time series to generate. Default is 1000.
     noise_pct_std : float, optional
         The standard deviation of the Gaussian noise added to the series, expressed as a percentage of the standard
-        deviation of the original random walk. Default is 0.001.
+        deviation of the original random walk. Default is 0.002 to simulate average daily market volatility.
     seed : {None, int, array_like, BitGenerator}, optional Random seed used to initialize the pseudo-random number
     generator or an instantized BitGenerator.
 
@@ -62,7 +62,7 @@ def stochastic_process(length: int = 99999, proba: float = 0.5, min_lag: int = 1
     Returns
     -------
     series : List[float]
-        Generated random walk series.
+        Generated random walk process.
     """
     assert(min_lag >= 1)
     assert(max_lag >= min_lag)

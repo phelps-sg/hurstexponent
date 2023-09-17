@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from util.utils import hurst_exponent, std_of_sums, structure_function, interpret_hurst
 
 
-def standard_hurst(series: np.array, nonlinear_fit_method: str = 'MLE', min_lag: int = 10,
+def standard_hurst(series: np.array, fitting_method: str = 'MLE', min_lag: int = 10,
                    max_lag: int = 100) -> Tuple[float, float, List[float]]:
     """
     Estiamte the Hurst exponent of a time series from the standard deviation of sums of N successive events using
@@ -16,14 +16,15 @@ def standard_hurst(series: np.array, nonlinear_fit_method: str = 'MLE', min_lag:
     ----------
     series: list or array-like series
             Represents time-series data
-    nonlinear_fit_method: str, optional
+    fitting_method: str, optional
         The method to use to estimate the Hurst exponent. Options include:
         - 'Least_squares': Direct fitting using Nonlinear Least-squares
         - 'MLE': Maximum Likelihood Estimation (MLE)
         Default is 'MLE'.
     max_lag: int, optional
-        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 100. This is a very
-        sensitive hyperparameter currently set with respect to series length and heuristically given problem domain.
+        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 100. Fit process
+        is highly sensitive to this hyperparameter – currently set with respect to series length and heuristically given
+        problem domain.
 
     Returns
     -------
@@ -53,14 +54,15 @@ def standard_hurst(series: np.array, nonlinear_fit_method: str = 'MLE', min_lag:
     if np.any(np.isnan(series)) or np.any(np.isinf(series)):
         raise ValueError("Time series contains NaN or Inf values")
 
-    if nonlinear_fit_method not in ['MLE', 'Least_squares']:
-        raise ValueError(f"Unknown method: {nonlinear_fit_method}. Expected 'MLE' or 'Least_squares'.")
+    if fitting_method not in ['MLE', 'Least_squares']:
+        raise ValueError(f"Unknown method: {fitting_method}. Expected 'MLE' or 'Least_squares'.")
 
     # Check if the time series is stationary
     mean = np.mean(series)
     if not np.isclose(mean, 0.0):
         # Subtracting mean to center data around zero
         series = (series - mean)
+
         # Diff each observation making a series stationary
         series = np.diff(series)
 
@@ -83,16 +85,24 @@ def standard_hurst(series: np.array, nonlinear_fit_method: str = 'MLE', min_lag:
         'y_values': y_values
     })
 
-    if nonlinear_fit_method == 'MLE':
+    if fitting_method == 'MLE':
         standard_hurst = Fit(xy_df, xmin_distance='BIC')
     else:
-        standard_hurst = Fit(xy_df, nonlinear_fit_method=nonlinear_fit_method, xmin_distance='BIC')
+        standard_hurst = Fit(xy_df, nonlinear_fit_method=fitting_method, xmin_distance='BIC')
+
+    # TODO: Remove below
+    # Fit custom function
+    # custom_powerlaw = {
+    #     'generalized_hurst': hurst_exponent
+    # }
+    #
+    # generalized_hurst.fit_powerlaw_function(custom_powerlaw)
 
     return standard_hurst
 
 
-def generalized_hurst(series: np.array, moment: int = 1, nonlinear_fit_method: str = 'MLE', min_lag: int = 10,
-                      max_lag: int = 100) -> Tuple[float, float, List[List[float]]]:
+def generalized_hurst(series: np.array, moment: int = 1, fitting_method: str = 'MLE', min_lag: int = 10,
+                      max_lag: int = 500) -> Tuple[float, float, List[List[float]]]:
     """
     Estimate the generalized Hurst exponent of a time series using the specified method.
 
@@ -102,16 +112,15 @@ def generalized_hurst(series: np.array, moment: int = 1, nonlinear_fit_method: s
             Represents time-series data
     moment : int
         The moment to use in the calculation. Defaults to 1st moment, the mean.
-    nonlinear_fit_method : str, optional
+    fitting_method : str, optional
         The method to use to estimate the Hurst exponent. Options include:
         - 'Least_squares': Direct fitting using Nonlinear Least-squares
         - 'MLE': Maximum Likelihood Estimation (MLE)
         Default is 'MLE'.
     max_lag : int, optional
-        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 100.This is a very
-        sensitive hyperparameter and may greatly influence the result of the fit (currently set with respect to series
-        length and heuristically given problem domain).
-
+        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 500. Hyperparameter
+        greatly influence the result of the fit process – currently set with respect to series length and heuristically given
+        problem domain.
 
     Returns
     -------
@@ -143,8 +152,8 @@ def generalized_hurst(series: np.array, moment: int = 1, nonlinear_fit_method: s
         raise ValueError("Time series contains NaN or Inf values")
 
     # Ensure the fitting_method is valid
-    if nonlinear_fit_method not in ['MLE', 'Least_squares']:
-        raise ValueError(f"Unknown method: {nonlinear_fit_method}. Expected 'MLE' or 'Least_squares'.")
+    if fitting_method not in ['MLE', 'Least_squares']:
+        raise ValueError(f"Unknown method: {fitting_method}. Expected 'MLE' or 'Least_squares'.")
 
     # Subtract the mean to center the data around zero
     mean = np.mean(series)
@@ -179,18 +188,10 @@ def generalized_hurst(series: np.array, moment: int = 1, nonlinear_fit_method: s
         'y_values': S_q_tau_values
     })
 
-    if nonlinear_fit_method == 'MLE':
+    if fitting_method == 'MLE':
         generalized_hurst = Fit(xy_df, xmin_distance='BIC')
     else:
-        generalized_hurst = Fit(xy_df, nonlinear_fit_method=nonlinear_fit_method, xmin_distance='BIC')
-
-    # TODO: Remove below
-    # Fit custom function
-    # custom_powerlaw = {
-    #     'generalized_hurst': hurst_exponent
-    # }
-    #
-    # generalized_hurst.fit_powerlaw_function(custom_powerlaw)
+        generalized_hurst = Fit(xy_df, nonlinear_fit_method=fitting_method, xmin_distance='BIC')
 
     return generalized_hurst
 
@@ -204,7 +205,7 @@ if __name__ == '__main__':
 
     # Genereate stochastic process with specific long-range properties
     from util.generate_series import stochastic_process
-    series = stochastic_process(length=99999, proba=.3, cumprod=False, seed=40)
+    series = stochastic_process(length=99999, proba=.50, cumprod=True, seed=50)
 
     # def acf(series: pd.Series, lags: int) -> List:
     #     """
@@ -227,6 +228,7 @@ if __name__ == '__main__':
     # series = acf(sample['trade_sign'], ACF_RANGE)[1:]
     # series = np.array(series)
 
+
     # Plot raw series
     plt.figure(figsize=(10, 6))
     plt.plot(series)
@@ -237,18 +239,17 @@ if __name__ == '__main__':
     plt.show()
 
     # Standard Hurst
-    print('Standard Hurst')
-    hurst = standard_hurst(series,  max_lag=1000) # nonlinear_fit_method='Least_squares'
+    print('Standard Hurst Exponent')
+    hurst = standard_hurst(series) # fitting_method='Least_squares'
     hurst.powerlaw.print_fitted_results()
     hurst.powerlaw.plot_fit()
     interpretation = interpret_hurst(hurst.powerlaw.params.alpha)
-    print(f"Hurst Estimate via Standard deviation of sums: H = {hurst.powerlaw.params.alpha}, ({interpretation})")
+    print(f'Hurst Estimate via Standard deviation of sums: H = {hurst.powerlaw.params.alpha}, ({interpretation})')
     print('\n')
 
-
     # Generalized Hurst
-    print('Generalized Fit')
-    generalized_hurst = generalized_hurst(series, max_lag=1000) # nonlinear_fit_method='Least_squares'
+    print('Generalized Hurst Exponent')
+    generalized_hurst = generalized_hurst(series, max_lag=1000)
     generalized_hurst.powerlaw.print_fitted_results()
     generalized_hurst.powerlaw.plot_fit()
     interpretation = interpret_hurst(generalized_hurst.powerlaw.params.alpha)
