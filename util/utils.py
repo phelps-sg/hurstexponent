@@ -2,28 +2,6 @@ import numpy as np
 
 
 # Helper functions
-def hurst_exponent(N: float, c: float, H: float) -> float:
-    """
-    Computes the value of the Hurst exponent function.
-
-    Parameters
-    ----------
-    N : float
-        Input value, representing the number of events or the scale of the data.
-    c : float
-        Proportionality constant.
-    H : float
-        Hurst exponent. Values between 0 and 0.5 indicate anti-persistent behavior,
-        values around 0.5 suggest random behavior (like Brownian motion),
-        while values between 0.5 and 1 indicate persistent behavior.
-
-    Returns
-    -------
-    float
-        Computed value of the Hurst exponent function.
-    """
-
-    return c * N**H
 
 
 # def std_of_sums(ts: np.array, chunk_size: int) -> float:
@@ -61,6 +39,10 @@ def get_sums_of_chunks(series: np.array, N: int) -> np.array:
 def std_of_sums(ts: np.array, lag_size: int) -> float:
     """
     Computes the standard deviation of sums of time series lags of size lag_size.
+
+    .. math::
+
+        TODO: define standard deviation of sums
 
     Parameters
     ----------
@@ -106,6 +88,10 @@ def structure_function(ts: np.array, moment: int, lag: int) -> float:
     Calculate the structure function for a given moment and lag, defined as the mean of the absolute differences
     to the power of the specified moment.
 
+    .. math::
+
+        S_q(lag) = < | x(t + lag) - x(t) |^q >_t \sim lag^{qH(q)}
+
     Parameters
     ----------
     ts : np.array
@@ -145,8 +131,8 @@ def interpret_hurst(H: float) -> str:
     """
     if not 0 <= H <= 1:
         return "Hurst Exponent not in a valid range [0, 1].  Series may not be a long memory process"
-    if H == 0.5:
-        return "Perfect diffusivity: series is a geometric or Brownian random walk"
+    if np.isclose(H, 0.5):
+        return "Perfect diffusivity: series is a Geometric or Brownian random walk"
     if H < 0.5:
         return "Sub-diffusive: series demonstrates anti-persistent behaviour"
     if H > 0.5:
