@@ -14,7 +14,7 @@ from util.utils import (
 
 def standard_hurst(
     series: np.array, fitting_method: str = "MLE", min_lag: int = 10, max_lag: int = 100
-) -> Tuple[float, float, List[float]]:
+) -> Fit:
     """
     Estiamte the Hurst exponent of a time series from the standard deviation of sums of N successive events using
     the specified fitting method.
@@ -98,7 +98,7 @@ def standard_hurst(
 
 def generalized_hurst(
     series: np.array, moment: int = 1, fitting_method: str = "MLE", min_lag: int = 10, max_lag: int = 500
-) -> Tuple[float, float, List[List[float]]]:
+) -> Fit:
     """
     Estimate the generalized Hurst exponent of a time series using the specified method.
 
