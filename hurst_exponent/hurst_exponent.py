@@ -8,7 +8,7 @@ from util.utils import hurst_exponent, std_of_sums, structure_function, interpre
 
 def standard_hurst(
     series: np.array, fitting_method: str = "MLE", min_lag: int = 10, max_lag: int = 100
-) -> Tuple[float, float, List[float]]:
+) -> Fit:
     """
     Estiamte the Hurst exponent of a time series from the standard deviation of sums of N successive events using
     the specified fitting method.
@@ -101,7 +101,7 @@ def standard_hurst(
 
 def generalized_hurst(
     series: np.array, moment: int = 1, fitting_method: str = "MLE", min_lag: int = 10, max_lag: int = 500
-) -> Tuple[float, float, List[List[float]]]:
+) -> Fit:
     """
     Estimate the generalized Hurst exponent of a time series using the specified method.
 
@@ -234,16 +234,16 @@ if __name__ == "__main__":
 
     # Standard Hurst
     print("Standard Hurst Exponent")
-    hurst = standard_hurst(series)  # fitting_method='Least_squares'
-    hurst.powerlaw.print_fitted_results()
-    hurst.powerlaw.plot_fit()
-    interpretation = interpret_hurst(hurst.powerlaw.params.alpha)
-    print(f"Hurst Estimate via Standard deviation of sums: H = {hurst.powerlaw.params.alpha}, ({interpretation})")
-    print("\n")
+    # hurst = standard_hurst(series)  # fitting_method='Least_squares'
+    # hurst.powerlaw.print_fitted_results()
+    # hurst.powerlaw.plot_fit()
+    # interpretation = interpret_hurst(hurst.powerlaw.params.alpha)
+    # print(f"Hurst Estimate via Standard deviation of sums: H = {hurst.powerlaw.params.alpha}, ({interpretation})")
+    # print("\n")
 
     # Generalized Hurst
     print("Generalized Hurst Exponent")
-    generalized_hurst = generalized_hurst(series, max_lag=1000)
+    generalized_hurst = generalized_hurst(series, max_lag=1000, fitting_method="MLE")
     generalized_hurst.powerlaw.print_fitted_results()
     generalized_hurst.powerlaw.plot_fit()
     interpretation = interpret_hurst(generalized_hurst.powerlaw.params.alpha)
