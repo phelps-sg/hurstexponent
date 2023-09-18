@@ -1,9 +1,15 @@
 import numpy as np
 import pandas as pd
-from typing import List, Tuple
 from powerlaw_function import Fit
 from matplotlib import pyplot as plt
-from util.utils import hurst_exponent, std_of_sums, structure_function, interpret_hurst
+from typing import List, Tuple, Callable, Any
+from stochastic.processes.continuous import FractionalBrownianMotion, GeometricBrownianMotion
+
+from util.utils import (
+    std_of_sums,
+    structure_function,
+    interpret_hurst,
+)
 
 
 def standard_hurst(
@@ -29,7 +35,7 @@ def standard_hurst(
 
     Returns
     -------
-     standard_hurst object containing:
+     fit_results object containing:
             - Params:
              - H: The Hurst exponent
              - c: A constant
@@ -61,10 +67,7 @@ def standard_hurst(
     # Check if the time series is stationary
     mean = np.mean(series)
     if not np.isclose(mean, 0.0):
-        # Subtracting mean to center data around zero
-        series = series - mean
-
-        # Diff each observation making a series stationary
+        series = series - mean  # Subtracting mean to center data around zero
         series = np.diff(series)
 
     # Find valid lags and corresponding values
@@ -84,19 +87,13 @@ def standard_hurst(
     xy_df = pd.DataFrame({"x_values": valid_lags, "y_values": y_values})
 
     if fitting_method == "MLE":
-        standard_hurst = Fit(xy_df, xmin_distance="BIC")
+        fit_results = Fit(xy_df, xmin_distance="BIC")
     else:
-        standard_hurst = Fit(xy_df, nonlinear_fit_method=fitting_method, xmin_distance="BIC")
+        fit_results = Fit(xy_df, nonlinear_fit_method=fitting_method, xmin_distance="BIC")
 
-    # TODO: Remove below
-    # Fit custom function
-    # custom_powerlaw = {
-    #     'generalized_hurst': hurst_exponent
-    # }
-    #
-    # generalized_hurst.fit_powerlaw_function(custom_powerlaw)
+    H = fit_results.powerlaw.params.alpha
 
-    return standard_hurst
+    return H, fit_results
 
 
 def generalized_hurst(
@@ -159,10 +156,6 @@ def generalized_hurst(
     if mean != 0:
         series = series - mean
 
-    # Generalised Hurst
-    def _generalized_function(lag, H_q, c):
-        return c * (lag**H_q)
-
     # Compute the S_q_tau values and valid lags
     min_lag = min_lag
     max_lag = min(max_lag, len(series))
@@ -181,70 +174,63 @@ def generalized_hurst(
     if not valid_lags or not S_q_tau_values:
         return np.nan, np.nan, [[], []]
 
-    # Perform fitting based on the selected method and return fitted object
+    # Fit
     xy_df = pd.DataFrame({"x_values": valid_lags, "y_values": S_q_tau_values})
 
     if fitting_method == "MLE":
-        generalized_hurst = Fit(xy_df, xmin_distance="BIC")
+        fit_results = Fit(xy_df, xmin_distance="BIC")
     else:
-        generalized_hurst = Fit(xy_df, nonlinear_fit_method=fitting_method, xmin_distance="BIC")
+        fit_results = Fit(xy_df, nonlinear_fit_method=fitting_method, xmin_distance="BIC")
 
-    return generalized_hurst
+    H = fit_results.powerlaw.params.alpha
+
+    return H, fit_results
 
 
 if __name__ == "__main__":
-    # Generate simple random walk series
-    # from util.generate_series import simple_series
-    # series = simple_series(length=99999, seed=70)
+    # Fractal BM
+    fbm = FractionalBrownianMotion(hurst=0.5, t=1)
+    fbm_series = fbm.sample(10000)
+    lags = fbm.times(10000)
+    plt.plot(lags, fbm_series)
+    plt.show()
 
-    # Genereate stochastic process with specific long-range properties
-    from util.generate_series import stochastic_process
-
-    series = stochastic_process(length=99999, proba=0.50, cumprod=True, seed=50)
-
-    # def acf(series: pd.Series, lags: int) -> List:
-    #     """
-    #     Returns a list of autocorrelation values for each of the lags from 0 to `lags`
-    #     """
-    #     acl_ = []
-    #     for i in range(lags):
-    #         ac = series.autocorr(lag=i)
-    #         acl_.append(ac)
-    #     return acl_
-    #
-    # # Load sample data – TSLA stock trade signs.
-    # import os
-    # current_dir = os.path.dirname(os.path.abspath(__file__))
-    # csv_path = os.path.join(current_dir, '..', 'datasets', 'stock_tsla.csv')
-    # sample = pd.read_csv(csv_path, header=0, index_col=0)
-    #
-    # # Series generated from a function, in this example, autocorrelation function (ACF)
-    # ACF_RANGE = 1001
-    # series = acf(sample['trade_sign'], ACF_RANGE)[1:]
-    # series = np.array(series)
-
-    # Plot raw series
-    plt.figure(figsize=(10, 6))
-    plt.plot(series)
-    plt.title("Raw Series")
-    plt.xlabel("Time")
-    plt.ylabel("Value")
-    plt.savefig("../plots/random_walk.png", bbox_inches="tight")
+    # GBM
+    gbm = GeometricBrownianMotion(drift=2, t=1)
+    gbm_series = fbm.sample(10000)
+    lags = fbm.times(10000)
+    plt.plot(lags, fbm_series)
     plt.show()
 
     # Standard Hurst
     print("Standard Hurst Exponent")
-    # hurst = standard_hurst(series)  # fitting_method='Least_squares'
-    # hurst.powerlaw.print_fitted_results()
-    # hurst.powerlaw.plot_fit()
-    # interpretation = interpret_hurst(hurst.powerlaw.params.alpha)
-    # print(f"Hurst Estimate via Standard deviation of sums: H = {hurst.powerlaw.params.alpha}, ({interpretation})")
-    # print("\n")
+    H, fit_results = standard_hurst(gbm_series)  # fitting_method='Least_squares'
+    fit_results.powerlaw.print_fitted_results()
+    fit_results.powerlaw.plot_fit()
+    print(f"Hurst Estimate via Standard deviation of sums: H = {H}, ({interpret_hurst(H)})")
+    print("\n")
 
     # Generalized Hurst
     print("Generalized Hurst Exponent")
-    generalized_hurst = generalized_hurst(series, max_lag=1000, fitting_method="MLE")
-    generalized_hurst.powerlaw.print_fitted_results()
-    generalized_hurst.powerlaw.plot_fit()
-    interpretation = interpret_hurst(generalized_hurst.powerlaw.params.alpha)
-    print(f"Hurst Estimate via Generalized Hurst: H = {generalized_hurst.powerlaw.params.alpha}, ({interpretation})")
+    H, fit_results = generalized_hurst(gbm_series, max_lag=100)
+    fit_results.powerlaw.print_fitted_results()
+    fit_results.powerlaw.plot_fit()
+    print(f"Hurst Estimate via Standard deviation of sums: H = {H}, ({interpret_hurst(H)})")
+
+    # Boostrap
+    def bootstrap(
+        estimator: Callable[[Any], Tuple[float, Any]],  # Adjusted the expected return type of the estimator
+        reps: int,
+        seed: int,
+    ) -> np.array:
+        np.random.seed(seed)
+        return np.array([estimator(fbm.sample(1000))[0] for _repetition in range(reps)])  # Extract the Hurst exponent
+
+    results = bootstrap(standard_hurst, reps=1000, seed=42)
+
+    lower_ci = np.percentile(results, 5)
+    upper_ci = np.percentile(results, 95)
+
+    print(pd.DataFrame(results, columns=["^H"]).describe())
+    print()
+    print("95% Confidence Interval:", (lower_ci, upper_ci))
