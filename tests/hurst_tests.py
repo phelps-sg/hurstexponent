@@ -2,66 +2,59 @@
 import functools
 from collections.abc import Callable
 from functools import lru_cache
-from typing import List, Any, Iterable
+from typing import List, Iterable
 from numpy.typing import NDArray
 
 
 import numpy as np
 import pytest
+from powerlaw_function import Fit
 from typing_extensions import Tuple
 
-from hurstexponent import standard_hurst, generalized_hurst
-from util.generate_series import simple_series
+from hurst_exponent import standard_hurst, generalized_hurst
 
-Estimator = Callable[[NDArray[np.float64]], Tuple[float, float, Any]]
+Estimator = Callable[[NDArray[np.float64]], Fit]
+Estimators = List[Tuple[str, Estimator]]
 
 
-def estimators_with_all_fitting_methods(
+def all_estimators_for(
     base_name: str,
     base_estimator: Callable,
-    fitting_methods: Iterable[str] = ("mle", "least_squares", "OLS"),
-) -> List[Tuple[str, Estimator]]:
-    """Create estimators for all fitting methods."""
+    max_lags: Iterable[float] = (256, 512, 1024),
+    fitting_methods: Iterable[str] = ("MLE", "Least_squares"),
+) -> Estimators:
+    """Create estimators for all hyperparameters of the specified base estimator
+    in the form [(estimator_name, estimator_fn]), ...]"""
     return [
         (
-            f"{base_name} [{fitting_method}]",
-            functools.partial(base_estimator, fitting_method=fitting_method),
+            f"{base_name} [{method}-{max_lag}]",
+            functools.partial(base_estimator, fitting_method="MLE", max_lag=max_lag),
         )
-        for fitting_method in fitting_methods
+        for max_lag in max_lags
+        for method in fitting_methods
     ]
 
 
-def estimators_with_initial_guesses(
-    base_name: str,
-    base_estimator: Callable,
-    initial_guesses: Iterable[float] = (0.4, 0.6),
-) -> List[Tuple[str, Estimator]]:
-    """Create estimators for all initial guesses of H."""
-    return [
-        (
-            f"{base_name} [mle initial_guess={guess}]",
-            functools.partial(
-                base_estimator, fitting_method="mle", initial_guess_H=guess
-            ),
-        )
-        for guess in initial_guesses
-    ]
+def all_estimators() -> Estimators:
+    """Create estimators used for all tests in the form [(estimator_name, estimator_fn]), ...]"""
+    return all_estimators_for("generalised", generalized_hurst) + all_estimators_for(
+        "standard", standard_hurst
+    )
 
 
-@lru_cache
-def all_estimators() -> List[Tuple[str, Estimator]]:
-    """List of all estimators used for tests in the form [(estimator_name, estimator_fn), ...]"""
-    return (
-        estimators_with_all_fitting_methods("standard", standard_hurst)
-        + estimators_with_all_fitting_methods("generalised", generalized_hurst)
-        + estimators_with_initial_guesses("standard", standard_hurst)
+def gbm(
+    length: int, volatility: float, initial_value: float = 1.0
+) -> NDArray[np.float64]:
+    """Simulate Geometric Brownian Motion (GBM) with the given parameters."""
+    return initial_value * np.exp(
+        np.cumsum(np.random.normal(size=length, scale=volatility))
     )
 
 
 @lru_cache
 def bootstrap(
     estimator: Estimator,
-    reps: int = 10000,
+    reps: int = 1000,
     seed: int = 42,
     length: int = 2048,
     volatility: float = 0.00002,
@@ -75,7 +68,7 @@ def bootstrap(
     np.random.seed(seed)
     return np.array(
         [
-            estimator(simple_series(length=length, volatility=volatility))[0]
+            estimator(gbm(length=length, volatility=volatility)).powerlaw.params.alpha
             for _repetition in range(reps)
         ]
     )
@@ -99,11 +92,17 @@ def test_within_limits(_estimator_name: str, estimator: Estimator):
 @pytest.mark.parametrize(["_estimator_name", "estimator"], all_estimators())
 def test_confidence_interval(_estimator_name: str, estimator: Estimator):
     """Check whether the estimator gives a 95% confidence interval whose bounds are within
-    the worst-case reported in the literature.  See Weron, Rafał.
-    "Estimating long-range dependence: finite sample properties and confidence intervals."
-    Physica A: Statistical Mechanics and its Applications 312.1-2 (2002): 285-299.
+    the worst-case reported in the literature.  See Barunuk (2010) and Weron (2002).
+
+    Barunik, Jozef, and Ladislav Kristoufek. "On Hurst exponent estimation under
+    heavy-tailed distributions." Physica A: statistical mechanics and its
+    applications 389.18 (2010): 3844-3855.
+
+    Weron, Rafał. "Estimating long-range dependence: finite sample properties and
+    confidence intervals." Physica A: Statistical Mechanics and its Applications
+    312.1-2 (2002): 285-299.
     """
-    point_estimates = bootstrap(estimator, length=2048)
+    point_estimates = bootstrap(estimator)
     lower_ci = np.percentile(point_estimates, 2.5)
     upper_ci = np.percentile(point_estimates, 97.5)
     assert upper_ci < 0.75
