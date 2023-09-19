@@ -28,7 +28,7 @@ def all_estimators_for(
     return [
         (
             f"{base_name} [{method}-{max_lag}]",
-            functools.partial(base_estimator, fitting_method="MLE", max_lag=max_lag),
+            functools.partial(base_estimator, fitting_method=method, max_lag=max_lag),
         )
         for max_lag in max_lags
         for method in fitting_methods
