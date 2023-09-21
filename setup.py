@@ -13,7 +13,15 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/anabugaenko/hurstexponent",
-    install_requires=["scipy", "numpy", "pandas", "typing", "statsmodels", "hurst", "matplotlib"],
+    install_requires=[
+        "scipy",
+        "numpy",
+        "pandas",
+        "typing",
+        "statsmodels",
+        "hurst",
+        "matplotlib",
+    ],
     keywords="hurst autocorrelation time-series fractals",
     packages=setuptools.find_packages(),
     classifiers=[

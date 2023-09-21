@@ -2,14 +2,15 @@
 import functools
 from collections.abc import Callable
 from functools import lru_cache
-from typing import List, Iterable
+from typing import Iterable, Tuple, Any
 from numpy.typing import NDArray
 
 
 import numpy as np
 import pytest
 from powerlaw_function import Fit
-from typing_extensions import Tuple
+from typing_extensions import List
+
 
 from hurst_exponent import standard_hurst, generalized_hurst
 
@@ -37,18 +38,12 @@ def all_estimators_for(
 
 def all_estimators() -> Estimators:
     """Create estimators used for all tests in the form [(estimator_name, estimator_fn]), ...]"""
-    return all_estimators_for("generalised", generalized_hurst) + all_estimators_for(
-        "standard", standard_hurst
-    )
+    return all_estimators_for("generalised", generalized_hurst) + all_estimators_for("standard", standard_hurst)
 
 
-def gbm(
-    length: int, volatility: float, initial_value: float = 1.0
-) -> NDArray[np.float64]:
+def gbm(length: int, volatility: float, initial_value: float = 1.0) -> NDArray[np.float64]:
     """Simulate Geometric Brownian Motion (GBM) with the given parameters."""
-    return initial_value * np.exp(
-        np.cumsum(np.random.normal(size=length, scale=volatility))
-    )
+    return initial_value * np.exp(np.cumsum(np.random.normal(size=length, scale=volatility)))
 
 
 @lru_cache
@@ -66,12 +61,7 @@ def bootstrap(
     and fix the seed once ahead of generating the iid. samples.
     """
     np.random.seed(seed)
-    return np.array(
-        [
-            estimator(gbm(length=length, volatility=volatility)).powerlaw.params.alpha
-            for _repetition in range(reps)
-        ]
-    )
+    return np.array([estimator(gbm(length=length, volatility=volatility))[0] for _repetition in range(reps)])
 
 
 @pytest.mark.parametrize(["_estimator_name", "estimator"], all_estimators())
@@ -91,7 +81,8 @@ def test_within_limits(_estimator_name: str, estimator: Estimator):
 
 @pytest.mark.parametrize(["_estimator_name", "estimator"], all_estimators())
 def test_confidence_interval(_estimator_name: str, estimator: Estimator):
-    """Check whether the estimator gives a 95% confidence interval whose bounds are within
+    """
+    Check whether the estimator gives a 95% confidence interval whose bounds are within
     the worst-case reported in the literature.  See Barunuk (2010) and Weron (2002).
 
     Barunik, Jozef, and Ladislav Kristoufek. "On Hurst exponent estimation under

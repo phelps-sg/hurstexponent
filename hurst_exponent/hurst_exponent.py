@@ -2,8 +2,12 @@ import numpy as np
 import pandas as pd
 from powerlaw_function import Fit
 from matplotlib import pyplot as plt
-from typing import List, Tuple, Callable, Any
-from stochastic.processes.continuous import FractionalBrownianMotion, GeometricBrownianMotion
+from typing import Tuple, Callable, Any
+from stochastic.processes.continuous import (
+    FractionalBrownianMotion,
+    GeometricBrownianMotion,
+)
+
 
 from util.utils import (
     std_of_sums,
@@ -13,11 +17,14 @@ from util.utils import (
 
 
 def standard_hurst(
-    series: np.array, fitting_method: str = "MLE", min_lag: int = 10, max_lag: int = 100
+    series: np.array,
+    fitting_method: str = "MLE",
+    min_lag: int = 10,
+    max_lag: int = 100,
 ) -> Fit:
     """
-    Estiamte the Hurst exponent of a time series from the standard deviation of sums of N successive events using
-    the specified fitting method.
+    Estiamte the Hurst exponent of a time series from the standard deviation
+    of sums of N successive events using the specified fitting method.
 
     Parameters
     ----------
@@ -25,22 +32,20 @@ def standard_hurst(
             Represents time-series data
     fitting_method: str, optional
         The method to use to estimate the Hurst exponent. Options include:
-        - 'Least_squares': Direct fitting using Nonlinear Least-squares
+        - 'Least_squares': Direct fit using Nonlinear Least-squares
         - 'MLE': Maximum Likelihood Estimation (MLE)
         Default is 'MLE'.
     max_lag: int, optional
-        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 100. Fit process
-        is highly sensitive to this hyperparameter – currently set with respect to series length and heuristically given
-        problem domain.
+        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 100.
+        Fit processis highly sensitive to this hyperparameter.
 
     Returns
     -------
-     fit_results object containing:
-            - Params:
-             - H: The Hurst exponent
-             - c: A constant
+    Params:
+         - H: The Hurst exponent
 
-            - FitResult: Represents the result of a fitting procedure.
+    fit_results object containing:
+        - FitResult: Represents the result of a fitting procedure.
 
     Raises
     ------
@@ -48,8 +53,6 @@ def standard_hurst(
         If an invalid fitting_method is provided.
     """
 
-    # Data checks
-    series = series
     if len(series) < 100:
         raise ValueError("Length of series cannot be less than 100")
 
@@ -67,10 +70,10 @@ def standard_hurst(
     # Check if the time series is stationary
     mean = np.mean(series)
     if not np.isclose(mean, 0.0):
-        series = series - mean  # Subtracting mean to center data around zero
+        # Subtracting mean to center data around zero
+        series = series - mean
         series = np.diff(series)
 
-    # Find valid lags and corresponding values
     min_lag = min_lag
     max_lag = min(max_lag, len(series))
     num_lags = int(np.sqrt(len(series)))
@@ -83,7 +86,7 @@ def standard_hurst(
     if not valid_lags or not y_values:
         return np.nan, np.nan, [[], []]
 
-    # Perform fitting based on the selected method and return fitted object
+    # Fit
     xy_df = pd.DataFrame({"x_values": valid_lags, "y_values": y_values})
 
     if fitting_method == "MLE":
@@ -97,10 +100,19 @@ def standard_hurst(
 
 
 def generalized_hurst(
-    series: np.array, moment: int = 1, fitting_method: str = "MLE", min_lag: int = 10, max_lag: int = 500
+    series: np.array,
+    moment: int = 1,
+    fitting_method: str = "MLE",
+    min_lag: int = 10,
+    max_lag: int = 500,
 ) -> Fit:
     """
-    Estimate the generalized Hurst exponent of a time series using the specified method.
+    Estimate the generalized Hurst exponent H(q) of a random variable from the scaling of the renormalized q-moments
+    of the distribution. The value of H(q) provides information about the fractal nature of the signal.
+
+    Barunik, Jozef, and Ladislav Kristoufek. "On Hurst exponent estimation under
+    heavy-tailed distributions." Physica A: statistical mechanics and its
+    applications 389.18 (2010): 3844-3855.
 
     Parameters
     ----------
@@ -110,22 +122,20 @@ def generalized_hurst(
         The moment to use in the calculation. Defaults to 1st moment, the mean.
     fitting_method : str, optional
         The method to use to estimate the Hurst exponent. Options include:
-        - 'Least_squares': Direct fitting using Nonlinear Least-squares
+        - 'Least_squares': Direct fit using Nonlinear Least-squares
         - 'MLE': Maximum Likelihood Estimation (MLE)
         Default is 'MLE'.
     max_lag : int, optional
-        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 500. Hyperparameter
-        greatly influence the result of the fit process – currently set with respect to series length and heuristically given
-        problem domain.
+        The maximum consecutive lag (windows, bins, chunks) to use in the calculation of H. Default is 500.
+        Currently set with respect to series length and heuristically given problem domain.
 
     Returns
     -------
-     standard_hurst object containing:
-            - Params:
-             - H: The Hurst exponent
-             - c: A constant
+    Params:
+         - H: The Hurst exponent
 
-            - FitResult: Represents the result of a fitting procedure.
+    Fit result object containing:
+        - fit_results: Represents the result of a fitting procedure.
 
     Raises
     ------
@@ -133,7 +143,6 @@ def generalized_hurst(
         If an invalid fitting_method is provided.
     """
 
-    series = series
     if len(series) < 100:
         raise ValueError("Length of series cannot be less than 100")
 
@@ -159,7 +168,6 @@ def generalized_hurst(
     # Compute the S_q_tau values and valid lags
     min_lag = min_lag
     max_lag = min(max_lag, len(series))
-    # lag_sizes = range(min_lag, max_lag)
     num_lags = int(np.sqrt(len(series)))
     lag_sizes = np.linspace(min_lag, max_lag, num=num_lags, dtype=int)
 
@@ -188,26 +196,24 @@ def generalized_hurst(
 
 
 if __name__ == "__main__":
-    # Fractal BM
-    fbm = FractionalBrownianMotion(hurst=0.5, t=1)
-    fbm_series = fbm.sample(10000)
-    lags = fbm.times(10000)
-    plt.plot(lags, fbm_series)
-    plt.show()
-
     # GBM
-    gbm = GeometricBrownianMotion(drift=2, t=1)
-    gbm_series = fbm.sample(10000)
-    lags = fbm.times(10000)
-    plt.plot(lags, fbm_series)
-    plt.show()
+    gbm = GeometricBrownianMotion(volatility=0.00002)
+    gbm_series = gbm.sample(n=10000)
+    gbm_lags = gbm.times(n=10000)
+
+    # Fractal BM
+    # fbm = FractionalBrownianMotion(hurst=0.5, t=1)
+    # fbm_series = fbm.sample(10000)
+    # lags = fbm.times(10000)
+    # plt.plot(lags, fbm_series)
+    # plt.show()
 
     # Standard Hurst
     print("Standard Hurst Exponent")
     H, fit_results = standard_hurst(gbm_series)  # fitting_method='Least_squares'
     fit_results.powerlaw.print_fitted_results()
     fit_results.powerlaw.plot_fit()
-    print(f"Hurst Estimate via Standard deviation of sums: H = {H}, ({interpret_hurst(H)})")
+    print(f"For Hurst estimated via standard deviation of sums: H = {H}, ({interpret_hurst(H)})")
     print("\n")
 
     # Generalized Hurst
@@ -215,18 +221,18 @@ if __name__ == "__main__":
     H, fit_results = generalized_hurst(gbm_series, max_lag=100)
     fit_results.powerlaw.print_fitted_results()
     fit_results.powerlaw.plot_fit()
-    print(f"Hurst Estimate via Standard deviation of sums: H = {H}, ({interpret_hurst(H)})")
+    print(f"For Hurst estimated via generalized method: H = {H}, ({interpret_hurst(H)})")
 
     # Boostrap
     def bootstrap(
-        estimator: Callable[[Any], Tuple[float, Any]],  # Adjusted the expected return type of the estimator
+        estimator: Callable[[Any], Tuple[float, Any]],
         reps: int,
         seed: int,
     ) -> np.array:
         np.random.seed(seed)
-        return np.array([estimator(fbm.sample(1000))[0] for _repetition in range(reps)])  # Extract the Hurst exponent
+        return np.array([estimator(gbm.sample(2048))[0] for _repetition in range(reps)])
 
-    results = bootstrap(standard_hurst, reps=1000, seed=42)
+    results = bootstrap(generalized_hurst, reps=1000, seed=42)
 
     lower_ci = np.percentile(results, 5)
     upper_ci = np.percentile(results, 95)

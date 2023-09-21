@@ -1,4 +1,7 @@
+from typing import Union, Any
+
 import numpy as np
+from numpy import ndarray
 
 
 # Helper functions
@@ -83,10 +86,11 @@ def calculate_diffs(ts: np.array, lag: int) -> np.ndarray:
     return ts[:-lag] - ts[lag:]
 
 
-def structure_function(ts: np.array, moment: int, lag: int) -> float:
+def structure_function(ts: np.array, moment: int, lag: int) -> Union[ndarray, Any]:
     """
-    Calculate the structure function for a given moment and lag, defined as the mean of the absolute differences
-    to the power of the specified moment.
+    Calculate the structure function for a given moment and lag,
+    defined as the mean of the absolute differences to the power
+    of the specified moment.
 
     .. math::
 
@@ -130,6 +134,7 @@ def interpret_hurst(H: float) -> str:
         Interpretation of Hurst Exponent.
     """
     if not 0 <= H <= 1:
+        # FIXME: The Generalized Hurst for white noise is dimension dependent, and for 1D and 2D it is H_{q}^{1D}={\frac {1}{2}},\quad H_{q}^{2D}=-1.
         return "Hurst Exponent not in a valid range [0, 1].  Series may not be a long memory process"
     if np.isclose(H, 0.5):
         return "Perfect diffusivity: series is a Geometric or Brownian random walk"
