@@ -39,7 +39,7 @@ def get_sums_of_chunks(series: np.array, N: int) -> np.array:
     return np.sum(reshaped_series, axis=1)
 
 
-def std_of_sums(ts: np.array, lag_size: int) -> float:
+def std_of_sums(ts: np.array, lag_size: int) -> Union[ndarray, Any]:
     """
     Computes the standard deviation of sums of time series lags of size lag_size.
 

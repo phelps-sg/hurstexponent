@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from powerlaw_function import Fit
 from matplotlib import pyplot as plt
-from typing import Tuple, Callable, Any
+from typing import Tuple, Callable, Any, List
 from stochastic.processes.continuous import (
     FractionalBrownianMotion,
     GeometricBrownianMotion,
@@ -21,7 +21,7 @@ def standard_hurst(
     fitting_method: str = "MLE",
     min_lag: int = 10,
     max_lag: int = 100,
-) -> Fit:
+) -> Tuple[Any, Fit]:
     """
     Estiamte the Hurst exponent of a time series from the standard deviation
     of sums of N successive events using the specified fitting method.
@@ -105,7 +105,7 @@ def generalized_hurst(
     fitting_method: str = "MLE",
     min_lag: int = 10,
     max_lag: int = 500,
-) -> Fit:
+) -> Tuple[Any, Fit]:
     """
     Estimate the generalized Hurst exponent H(q) of a random variable from the scaling of the renormalized q-moments
     of the distribution. The value of H(q) provides information about the fractal nature of the signal.
