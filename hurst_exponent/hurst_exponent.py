@@ -5,7 +5,12 @@ from matplotlib import pyplot as plt
 from typing import Tuple, Callable, Any, List
 
 
-from util.utils import std_of_sums, structure_function, interpret_hurst, bootstrap
+from util.utils import (
+    std_of_sums,
+    structure_function,
+    interpret_hurst,
+    bootstrap
+)
 
 
 def _preprocess_series(series: np.array) -> np.array:
