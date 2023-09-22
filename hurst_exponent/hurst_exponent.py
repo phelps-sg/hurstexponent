@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
+from typing import Tuple, Any
 from powerlaw_function import Fit
-from matplotlib import pyplot as plt
-from typing import Tuple, Callable, Any, List
 
 
 from util.utils import (
