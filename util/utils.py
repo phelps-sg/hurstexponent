@@ -1,24 +1,25 @@
-from typing import Union, Any
-
 import numpy as np
 from numpy import ndarray
+from typing import Union, Any, Callable, Tuple
+
+from stochastic.processes.continuous import GeometricBrownianMotion
 
 
 # Helper functions
 
 
-# def std_of_sums(ts: np.array, chunk_size: int) -> float:
-#     """
-#     Computes the standard deviation of sums of time series chunks of size chunk_size.
-#     std : float
-#         The standard deviation of the sums
-#     """
-#     sums = []
-#     for i in range(0, len(ts), chunk_size):  # Iterate over the time series with a step size of chunk_size
-#         chunk = ts[i: i + chunk_size]  # Get the next chunk of size chunk_size
-#         if len(chunk) == chunk_size:  # If we have a full chunk of size chunk_size
-#             sums.append(np.sum(chunk))  # Sum up the chunk and add to the list
-#     return np.std(sums)
+# Boostrap
+def bootstrap(
+    estimator: Callable[[Any], Tuple[float, Any]],
+    reps: int,
+    seed: int = None,
+) -> np.array:
+    if seed:
+        np.random.seed(seed)
+    gbm = GeometricBrownianMotion(volatility=0.00002)
+    return np.array([estimator(gbm.sample(2048))[0] for _repetition in range(reps)])
+
+
 def get_sums_of_chunks(series: np.array, N: int) -> np.array:
     """
     Reshapes a series into chunks of size N and sums each chunk.
