@@ -15,9 +15,10 @@ This repository  is actively being developed and any tickets will be addressed i
 
 ## Installation 
 
-To get started, `pip install hurst_exponent`:
+To get started;
 
-  `pip install hurst-exponent`
+`pip install hurst_exponent`:
+
 
 ### Dependencies
   - numpy
