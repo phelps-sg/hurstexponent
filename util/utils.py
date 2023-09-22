@@ -46,7 +46,7 @@ def std_of_sums(ts: np.array, lag_size: int) -> Union[ndarray, Any]:
 
     .. math::
 
-        TODO: define standard deviation of sums
+        sum_{i=1}^{N} x_i ~ N^{2H}
 
     Parameters
     ----------

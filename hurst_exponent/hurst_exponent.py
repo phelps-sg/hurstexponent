@@ -55,7 +55,7 @@ def standard_hurst(
         series (np.array): Time series data.
         fitting_method (str): Method for fitting. Either "MLE" or "Least_squares".
         min_lag (int): Minimum lag for analysis.
-        max_lag (int): Maximum lag for analysis. Fitting is process highly sensitive to hypermarket
+        max_lag (int): Maximum lag for analysis. Fitting is process highly sensitive to hyperparameter
 
     Returns:
         H (float): Hurst exponent value.
@@ -110,7 +110,7 @@ def generalized_hurst(
         moment (int): Order of the moment for the structure function.
         fitting_method (str): Method for fitting. Either "MLE" or "Least_squares".
         min_lag (int): Minimum lag for analysis.
-        max_lag (int): Maximum lag for analysis. Fitting process is highly sensitive to hypermarket
+        max_lag (int): Maximum lag for analysis. Fitting process is highly sensitive to hyperparameter
 
     Returns:
         H (float): Hurst exponent value.
