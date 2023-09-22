@@ -17,7 +17,7 @@ This repository  is actively being developed and any tickets will be addressed i
 
 To get started;
 
-`pip install hurst_exponent`:
+`pip install hurst_exponent`
 
 
 ### Dependencies
