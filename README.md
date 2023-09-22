@@ -1,23 +1,30 @@
 # Hurst Estimator
-A simple statistical package for estimating the long-term memory of time series data.  
 
-#
-This repository contains a Python Package for estimating the Hurst exponent of a time series. The Hurst exponent is used as a measure of long-term memory of time series and relates to both the scaling of the standard deviation of sums of N successive events and the autocorrelations of the time series given the rate at which these decrease as the lag between pairs of values increases.
+Estimate the Hurst exponent, a statistical measure of the long-term memory of a stochastic process using robust statistical methods. Our package provides methods to compute the Hurst exponent, currently using both the standard deviation of sums and a generalized method through the structure function.
 
-Feel free to raise an issue if you find a problem; this repository is actively being developed and any tickets will be addressed in order of importance.
+This repository  is actively being developed and any tickets will be addressed in order of importance. Feel free to raise an issue if you find a problem.
 
-# Table of Contents
-[Installation](#Installation)</b>
+## Features:
 
-[Basic Usage](#Usage)</b>
-
-[Example](#Example)</b>
+  - Support for both standard and generalized Hurst exponent calculations.
+  - Goodness of fit metrics.
+  - Interpretation of Hurst exponent values.
+  - Ability to plot and visualize fit results.
+  - Bootstrap functionality for additional statistics.
+  - Test suite test suite is meant to validate the functionality of Hurst exponent estimators.
 
 ## Installation 
 
-We recommend conda for managing Python packages; pip for everything else. To get started, `pip install hurstexponent` ensuring the following dependencies:
+To get started, `pip install hurst_exponent`:
 
-  `pip install scipy numpy pandas statsmodels hurst typing matplotlib`
+  `pip install hurst-exponent`
+
+### Dependencies
+  - numpy
+  - pandas
+  - powerlaw_function
+  - stochastic
+  - Ensure that you've installed all the dependencies before utilizing the package.
 
 
 ## Basic Usage 
@@ -25,102 +32,81 @@ We recommend conda for managing Python packages; pip for everything else. To get
 This tells you everything you need to know for the simplest, typical use cases:
   
 ~~~python
-# Generate simple random walk series
-from util.generate_series import simple_series
-series = simple_series(length=99999, noise_pct_std=0.02, seed=70) # avg. daily market volatility
+from hurst_exponent import standard_hurst, generalized_hurst
 
-# Plot raw series
-plt.figure(figsize=(10, 6))
-plt.plot(series)
-plt.title('Raw Series')
-plt.xlabel('Time')
-plt.ylabel('Value')
-plt.savefig('../plots/random_walk.png', bbox_inches='tight')
-plt.show()
+# Define your time series data
+series = [...]
 
-# Standard Hurst
-print('Standard Hurst Exponent')
-hurst = standard_hurst(series) # fit_method='Least_squares'
-hurst.powerlaw.print_fitted_results()
-interpretation = interpret_hurst(hurst.powerlaw.params.alpha)
-print(f'Hurst Estimate via Standard deviation of sums: H = {hurst.powerlaw.params.alpha}, ({interpretation})')
-print('\n')
+# Estimate Hurst Exponent using standard method
+hurst_std, fit_std = standard_hurst(series)
 
-# Generalized Hurst
-print('Generalized Hurst Exponent')
-generalized_hurst = generalized_hurst(series)
-generalized_hurst.powerlaw.print_fitted_results()
-interpretation = interpret_hurst(generalized_hurst.powerlaw.params.alpha)
-print(f"Hurst Estimate via Generalized Hurst: H = {generalized_hurst.powerlaw.params.alpha}, ({interpretation})")
+# Estimate Hurst Exponent using generalized method
+hurst_gen, fit_gen = generalized_hurst(series)
+
+# Print results
+print(f"Standard Hurst Exponent: {hurst_std}")
+print(f"Generalized Hurst Exponent: {hurst_gen}")
 ~~~
 
-## Advanced Usage 
+## Documentation
+### Preprocessing and Validations
 
-~~~python
-def acf(series: pd.Series, lags: int) -> List:
-    """
-    Returns a list of autocorrelation values for each of the lags from 0 to `lags`
-    """
-    acl_ = []
-    for i in range(lags):
-        ac = series.autocorr(lag=i)
-        acl_.append(ac)
-    return acl_
+`_preprocess_series(series: np.array)`: Handles non-array input, zeroes, NaNs, Infs, and removes mean from the series.
 
+`_check_fitting_method_validity(fitting_method: str)`: Validates if the given fitting method is supported.
 
-# Load sample data – TSLA stock trade signs.
-sample = pd.read_csv('../datasets/stock_tsla.csv', header=0, index_col=0)
-# Series generated from a function, in this example, autocorrelation function (ACF)
-ACF_RANGE = 1001
-series = acf(sample['trade_sign'], ACF_RANGE)[1:]
-series = np.array(series)
+`_fit_data(fitting_method: str, xy_df: pd.DataFrame)`: Fits the data using the specified method and returns the fitting results.
 
-# Generalized Hurst
-print('Generalized Hurst Exponent')
-generalized_hurst = generalized_hurst(series, fitting_method='Least_squares', max_lag: int = 100) # select fitting parameters appropriate for problem domain
-generalized_hurst.powerlaw.print_fitted_results()
-generalized_hurst.powerlaw.plot_fit()
-interpretation = interpret_hurst(generalized_hurst.powerlaw.params.alpha)
-print(f"Hurst Estimate via Generalized Hurst: H = {generalized_hurst.powerlaw.params.alpha}, ({interpretation})")
-~~~
+### Main Functions
+  ~~~python
+  standard_hurst(series: np.array, ...):
+  ~~~
+  Compute the Hurst exponent using the standard deviation of sums.
+
+  ~~~python
+  generalized_hurst(series: np.array, ...):
+  ~~~
+  Calculates the generalized Hurst exponent using the structure function method.
 
 
-# Results
+### Utils
 
-~~~
-Standard Hurst Exponent
+  `bootstrap(estimator: Callable, ...)`: Generates bootstrap samples.
+  
+  `get_sums_of_chunks(series: np.array, N: int)`: Reshapes a series into chunks of size N and sums each chunk.
 
-For powerlaw fitted using MLE;
+  `std_of_sums(ts: np.array, lag_size: int)`: Computes the standard deviation of sums of time series lags of size lag_size.
 
-Pre-fitting parameters:
-xmin: 10.0
+  `calculate_diffs(ts: np.array, lag: int)`: Calculate detrended differences at specified lag steps in the time series.
 
-Fitting parameters:
-param_names = ['C', 'alpha']
-C = 0.0008792925582104561
-alpha = 0.5121080536945518
+  `structure_function(ts: np.array, moment: int, lag: int)`: Calculate the structure function for a given moment and lag.
 
-Goodness of fit to data:
-D = 0.031746031746031744
-bic = -6004.969035377474
-Adjusted R-squared = 0.9984213733623283
-Hurst Estimate via Standard deviation of sums: H = 0.5121080536945518, (Super-diffusive: series demonstrates persistent long-range dependence)
+  `interpret_hurst(H: float)`: Provides an interpretation for the given Hurst Exponent.
 
-Generalized Hurst Exponent
 
-For powerlaw fitted using MLE;
+### Hurst Estimators Test Suite
 
-Pre-fitting parameters:
-xmin: 13.0
+Our Hurst Estimators Test Suite is dedicated to ensuring the robustness and accuracy of the generalized_hurst and standard_hurst estimators in the context of financial time series analysis.
 
-Fitting parameters:
-param_names = ['C', 'alpha']
-C = 0.0007479492781326126
-alpha = 0.4998855852717425
+#### Highlights:
 
-Goodness of fit to data:
-D = 0.01904761904761905
-bic = -5864.657061268197
-Adjusted R-squared = 0.999732241890803
-Hurst Estimate via Generalized Hurst: H = 0.4998855852717425, (Sub-diffusive: series demonstrates anti-persistent behaviour)
-~~~
+  ##### Estimators:
+  Tests various hyperparameter combinations for both the generalized and standard Hurst estimators.
+  
+    - Simulation: Uses Geometric Brownian Motion (GBM) to simulate data for testing, representing a standard model for stock price movements.
+
+    - Bootstrapping: Repeated sampling is employed to create a distribution of Hurst estimates, enhancing statistical validation.
+
+  ##### Core Tests:
+
+    - Unbiasedness: Checks if the estimator accurately identifies a random walk in GBM data.
+    - Validity: Ensures estimates fall within the [0, 1] range.
+    - Confidence Intervals: Validates that the 95% CI aligns with bounds cited in major literature.
+  
+To delve into the specifics, review the test suite source code.
+
+# License
+This project is licensed under the MIT License. See the LICENSE.md file for details.
+
+
+
