@@ -12,7 +12,7 @@ setuptools.setup(
     description="Hurst exponent estimator",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/anabugaenko/hurstexponent",
+    url="https://github.com/anabugaenko/hurst_exponent",
     install_requires=[
         "scipy",
         "numpy",

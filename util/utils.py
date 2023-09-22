@@ -94,7 +94,7 @@ def structure_function(ts: np.array, moment: int, lag: int) -> Union[ndarray, An
 
     .. math::
 
-        S_q(lag) = < | x(t + lag) - x(t) |^q >_t \sim lag^{qH(q)}
+        S_q(lag) = < | x(t + lag) - x(t) |^q >_t/(T −τ +1)
 
     Parameters
     ----------

@@ -26,6 +26,10 @@ def standard_hurst(
     Estiamte the Hurst exponent of a time series from the standard deviation
     of sums of N successive events using the specified fitting method.
 
+    maths::
+        \sum_{i=1}^{N} x_i ~ N^{2H}
+
+
     Parameters
     ----------
     series: list or array-like series
@@ -114,6 +118,9 @@ def generalized_hurst(
     heavy-tailed distributions." Physica A: statistical mechanics and its
     applications 389.18 (2010): 3844-3855.
 
+    math::
+        S_q(lag) = < | x(t + lag) - x(t) |^q >_t/(T −τ +1) ~ cLag^qH(q)
+
     Parameters
     ----------
     series : list or array-like series
@@ -131,7 +138,7 @@ def generalized_hurst(
 
     Returns
     -------
-    Params:
+    Tuplet:
          - H: The Hurst exponent
 
     Fit result object containing:
