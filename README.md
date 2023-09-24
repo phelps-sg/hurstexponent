@@ -66,7 +66,7 @@ print(f"Generalized Hurst Exponent: {hurst_gen}")
 
 ### Utils
 ~~~python
-  `bootstrap(estimator: Callable, ...)`:
+  bootstrap(estimator: Callable, ...):
 ~~~
   
   Generates bootstrap samples.
