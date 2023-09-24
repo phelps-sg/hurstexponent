@@ -1,8 +1,6 @@
 # Hurst Estimator
 
-Estimate the Hurst exponent, a statistical measure of the long-term memory of a stochastic process using robust statistical methods. Our package provides methods to compute the Hurst exponent using both the standard deviation of sums and a generalized method through the structure function. Other methods will be supported in the near future.
-
-This repository  is actively being developed and any tickets will be addressed in order of importance. Feel free to raise an issue if you find a problem.
+Estimate the Hurst exponent, a statistical measure of the long-term memory of a stochastic process using robust statistical methods. Our package provides methods to compute the Hurst exponent using both the standard deviation of sums and a generalized method through the structure function. 
 
 ## Features:
 
@@ -12,6 +10,8 @@ This repository  is actively being developed and any tickets will be addressed i
   - Ability to plot and visualize fit results.
   - Bootstrap functionality for additional statistics.
   - Test suite test suite is meant to validate the functionality of Hurst exponent estimators.
+
+This repository  is actively being developed and any tickets will be addressed in order of importance. Feel free to raise an issue if you find a problem. Other hurst estimation methods will be supported in the near future.
 
 ## Installation 
 
