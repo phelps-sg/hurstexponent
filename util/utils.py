@@ -20,7 +20,7 @@ def bootstrap(
     return np.array([estimator(gbm.sample(2048))[0] for _repetition in range(reps)])
 
 
-def get_sums_of_chunks(series: np.array, N: int) -> np.array:
+def _get_sums_of_chunks(series: np.array, N: int) -> np.array:
     """
     Reshapes a series into chunks of size N and sums each chunk.
 
@@ -63,11 +63,11 @@ def std_of_sums(ts: np.array, lag_size: int) -> Union[ndarray, Any]:
     if lag_size == 0:
         return np.nan
 
-    sums = get_sums_of_chunks(ts, lag_size)
+    sums = _get_sums_of_chunks(ts, lag_size)
     return np.std(sums)
 
 
-def calculate_diffs(ts: np.array, lag: int) -> np.ndarray:
+def _calculate_diffs(ts: np.array, lag: int) -> np.ndarray:
     """
     Calculate detrended differences at specified lag steps in the time series.
 
@@ -112,7 +112,7 @@ def structure_function(ts: np.array, moment: int, lag: int) -> Union[ndarray, An
         The calculated structure function for the specified moment and lag.
         If the differences array is empty, it returns np.nan
     """
-    diffs = np.abs(calculate_diffs(ts, lag))
+    diffs = np.abs(_calculate_diffs(ts, lag))
     ts_abs_moment = np.abs(ts[:-lag]) ** moment
     if diffs.size != 0 and np.any(ts_abs_moment):
         return np.mean(diffs**moment)
