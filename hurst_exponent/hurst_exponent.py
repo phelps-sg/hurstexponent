@@ -20,8 +20,7 @@ def _preprocess_series(series: np.array) -> np.array:
 
     # Subtract mean to center data around zero
     mean = np.mean(series)
-    if not np.isclose(mean, 0.0):
-        series = series - mean
+    series = series - mean
 
     return series
 
