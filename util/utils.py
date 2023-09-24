@@ -5,9 +5,6 @@ from typing import Union, Any, Callable, Tuple
 from stochastic.processes.continuous import GeometricBrownianMotion
 
 
-# Helper functions
-
-
 # Boostrap
 def bootstrap(
     estimator: Callable[[Any], Tuple[float, Any]],
@@ -19,6 +16,8 @@ def bootstrap(
     gbm = GeometricBrownianMotion(volatility=0.00002)
     return np.array([estimator(gbm.sample(2048))[0] for _repetition in range(reps)])
 
+
+# Helper functions
 
 def _get_sums_of_chunks(series: np.array, N: int) -> np.array:
     """
