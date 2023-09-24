@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from powerlaw_function import Fit
-from typing import Tuple, Callable, Any
+from typing import Tuple, Any
 
 
 from util.utils import std_of_sums, structure_function, interpret_hurst, bootstrap
@@ -33,15 +33,15 @@ def _check_fitting_method_validity(fitting_method: str):
         raise ValueError(f"Unknown method: {fitting_method}. Expected one of {valid_methods}.")
 
 
-def _fit_data(fitting_method: str, xy_df: pd.DataFrame) -> Fit:
+def _fit_data(fitting_method: str, xy_values: pd.DataFrame) -> Fit:
     """Fits the data using the specified method and returns the fitting results."""
     if fitting_method == "MLE":
-        return Fit(xy_df, xmin_distance="BIC")
-    return Fit(xy_df, nonlinear_fit_method=fitting_method, xmin_distance="BIC")
+        return Fit(xy_values, xmin_distance="BIC")
+    return Fit(xy_values, nonlinear_fit_method=fitting_method, xmin_distance="BIC")
 
 
 def standard_hurst(
-    series: np.array, fitting_method: str = "MLE", min_lag: int = 10, max_lag: int = 100
+    series: np.array, fitting_method: str = "MLE", min_lag: int = 1, max_lag: int = 100
 ) -> Tuple[Any, Fit]:
     """
     Compute the Hurst exponent using standard the standard deviation of sums:
@@ -94,7 +94,7 @@ def generalized_hurst(
     series: np.array,
     moment: int = 1,
     fitting_method: str = "MLE",
-    min_lag: int = 10,
+    min_lag: int = 1,
     max_lag: int = 100,
 ) -> Tuple[Any, Fit]:
     """
@@ -127,13 +127,13 @@ def generalized_hurst(
     num_lags = int(np.sqrt(len(series)))
     lag_sizes = np.linspace(min_lag, max_lag, num=num_lags, dtype=int)
 
-    S_q_tau_values = []
-    valid_lags = []
-    for lag in lag_sizes:
-        S_q_tau = structure_function(series, moment, lag)
-        if np.isfinite(S_q_tau):
-            S_q_tau_values.append(S_q_tau)
-            valid_lags.append(lag)
+    S_q_tau_values = [
+        structure_function(series, moment, lag)
+        for lag in lag_sizes
+        if np.isfinite(structure_function(series, moment, lag))
+    ]
+    valid_lags = [lag for lag in lag_sizes if np.isfinite(structure_function(series, moment, lag))]
+
     if not valid_lags or not S_q_tau_values:
         return np.nan, np.nan, [[], []]
 
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     from stochastic.processes.continuous import FractionalBrownianMotion
     from matplotlib import pyplot as plt
 
-    fbm = FractionalBrownianMotion(hurst=0.22, t=1)
+    fbm = FractionalBrownianMotion(hurst=0.3, t=1)
     fbm_series = fbm.sample(10000)
     lags = fbm.times(10000)
     plt.plot(lags, fbm_series)
@@ -170,11 +170,11 @@ if __name__ == "__main__":
     print(f"Generalized Hurst Exponent: {hurst_gen} ({interpret_hurst(hurst_gen)})")
 
     # Bootstrap
-    results = bootstrap(generalized_hurst, reps=1000, seed=42)
+    results = bootstrap(generalized_hurst, reps=1000, seed=50)
 
     lower_ci = np.percentile(results, 5)
     upper_ci = np.percentile(results, 95)
 
-    print(pd.DataFrame(results, columns=["^H"]).describe())
+    print(pd.DataFrame(results, columns=["H"]).describe())
     print()
     print("95% Confidence Interval:", (lower_ci, upper_ci))
