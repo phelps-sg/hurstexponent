@@ -1,6 +1,6 @@
 # Hurst Estimator
 
-Estimate the Hurst exponent, a statistical measure of the long-term memory of a stochastic process using robust statistical methods. Our package provides methods to compute the Hurst exponent using both the standard deviation of sums and a generalized method through the structure function. 
+Estimate the Hurst exponent of a stochastic process using robust statistical methods. Our package provides methods to compute the Hurst exponent (a statistical measure of long-term memory) using the standard deviation of sums and a generalized method through the structure function. 
 
 ## Features:
 
@@ -10,8 +10,9 @@ Estimate the Hurst exponent, a statistical measure of the long-term memory of a 
   - Ability to plot and visualize fit results.
   - Bootstrap functionality for additional statistics.
   - Test suite test suite is meant to validate the functionality of Hurst exponent estimators.
+  - Other hurst estimation methods will be supported in the near future.
 
-This repository  is actively being developed and any tickets will be addressed in order of importance. Feel free to raise an issue if you find a problem. Other hurst estimation methods will be supported in the near future.
+This repository is actively being developed and any tickets will be addressed in order of importance. Feel free to raise an issue if you find a problem.
 
 ## Installation 
 
@@ -30,7 +31,7 @@ Ensure the following dependencies are installed before utilizing the package.
 
 ## Basic Usage 
 
-This tells you everything you need to know for the simplest, typical use cases:
+This tells you everything you need to know for the simplest, typical, use cases:
   
 ~~~python
 from hurst_exponent import standard_hurst, generalized_hurst
@@ -64,15 +65,11 @@ print(f"Generalized Hurst Exponent: {hurst_gen}")
 
 
 ### Utils
-
-  `bootstrap(estimator: Callable, ...)`: Generates bootstrap samples.
+~~~python
+  bootstrap(estimator: Callable, ...):
+~~~
   
-  `std_of_sums(ts: np.array, lag_size: int)`: Computes the standard deviation of sums of time series lags of size lag_size.
-
-  `structure_function(ts: np.array, moment: int, lag: int)`: Calculate the structure function for a given moment and lag.
-
-  `interpret_hurst(H: float)`: Provides an interpretation for the given Hurst Exponent.
-
+  Generates bootstrap samples.
 
 ### Hurst Estimators Test Suite
 
