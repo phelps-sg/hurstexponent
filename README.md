@@ -1,6 +1,6 @@
 # Hurst Estimator
 
-Estimate the Hurst exponent of a stochastic process using robust statistical methods. Our package provides methods to compute the Hurst exponent (a statistical measure of long-term memory) using the standard deviation of sums and a generalized method through the structure function. 
+Estimate the Hurst exponent of a random variable using robust statistical methods. Our package provides methods to compute the Hurst exponent (a statistical measure of long-term memory) using the standard deviation of sums and a generalized method through the structure function. 
 
 ## Features:
 
