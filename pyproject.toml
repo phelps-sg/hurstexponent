@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "hurst-exponent"
-version = "1.0.0"
+version = "1.0.1"
 description = "Hurst exponent estimator"
 authors = ["Anastasia Bugeenko <anabugaenko@gmail.com>"]
 license = "MIT"
