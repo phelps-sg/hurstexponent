@@ -63,7 +63,7 @@ def linear_acf(series: pd.Series, lags: int) -> List:
     return acl_
 
 
-def nonlinear_acf(series: pd.Series, lags: int, method: str= "spearman") -> List:
+def nonlinear_acf(series: pd.Series, lags: int, method: str = "spearman") -> List:
     """
     Returns a list of nonlinear autocorrelation values for each of the lags from 0 to `lags`
     """
