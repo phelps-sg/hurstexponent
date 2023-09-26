@@ -19,6 +19,7 @@ def bootstrap(
 
 # Helper functions
 
+
 def _get_sums_of_chunks(series: np.array, lag_size: int) -> np.array:
     """
     Reshapes a series into chunks of size N and sums each chunk.

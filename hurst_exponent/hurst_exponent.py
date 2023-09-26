@@ -40,7 +40,10 @@ def _fit_data(fitting_method: str, xy_values: pd.DataFrame) -> Fit:
 
 
 def standard_hurst(
-    series: np.array, fitting_method: str = "MLE", min_lag: int = 1, max_lag: int = 100
+    series: np.array,
+    fitting_method: str = "MLE",
+    min_lag: int = 1,
+    max_lag: int = 100
 ) -> Tuple[float, Fit]:
     """
     Compute the Hurst exponent using standard the standard deviation of sums:
