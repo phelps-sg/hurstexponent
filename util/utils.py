@@ -19,7 +19,7 @@ def bootstrap(
 
 # Helper functions
 
-def _get_sums_of_chunks(series: np.array, N: int) -> np.array:
+def _get_sums_of_chunks(series: np.array, lag_size: int) -> np.array:
     """
     Reshapes a series into chunks of size N and sums each chunk.
 
@@ -27,15 +27,15 @@ def _get_sums_of_chunks(series: np.array, N: int) -> np.array:
     ----------
     series : np.array
         The time series to process
-    N : int
-        Chunk size
+    lag_size : int
+        Lag size
 
     Returns
     -------
     np.array
         Summed values of each chunk
     """
-    reshaped_series = series[: len(series) // N * N].reshape(-1, N)
+    reshaped_series = series[: len(series) // lag_size * lag_size].reshape(-1, lag_size)
     return np.sum(reshaped_series, axis=1)
 
 
