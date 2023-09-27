@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from powerlaw_function import Fit
-from typing import Tuple, Any
+from typing import Tuple
 
 
 from util.utils import std_of_sums, structure_function, interpret_hurst, bootstrap
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     from stochastic.processes.continuous import FractionalBrownianMotion
     from matplotlib import pyplot as plt
 
-    fbm = FractionalBrownianMotion(hurst=0.3, t=1)
+    fbm = FractionalBrownianMotion(hurst=0.5, t=1)
     fbm_series = fbm.sample(10000)
     lags = fbm.times(10000)
     plt.plot(lags, fbm_series)
