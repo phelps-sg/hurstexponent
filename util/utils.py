@@ -140,9 +140,9 @@ def structure_function(ts: np.array, moment: int, lag: int) -> Union[ndarray, An
 def interpret_hurst(H: float) -> str:
     """
     Interpretation of Hurst Exponent, which represents a measure of the
-    long-term memory. Hurst parameter :math:`H`. For :math:`H = 1/2`,
-    the process is a standard Brownian motion. :math:`H > 1/2`, the
-    increments are positively correlated. When :math:`H < 1/2`, the
+    long-term memory. Hurst parameter :math:`H`. When `H = 1/2`,
+    the process is a standard Brownian motion. `H > 1/2`, the
+    increments are positively correlated. For `H < 1/2`, the
     increments are negatively correlated.
 
     Parameters
