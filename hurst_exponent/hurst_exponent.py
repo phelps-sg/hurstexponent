@@ -4,7 +4,7 @@ from powerlaw_function import Fit
 from typing import Tuple
 
 
-from util.utils import std_of_sums, structure_function, interpret_hurst, bootstrap
+from hurst_exponent.util.utils import std_of_sums, structure_function, interpret_hurst, bootstrap
 
 
 def _preprocess_series(series: np.array) -> np.array:
