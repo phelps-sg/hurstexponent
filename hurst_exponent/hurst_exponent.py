@@ -4,12 +4,12 @@ from powerlaw_function import Fit
 from typing import Tuple
 
 
-from hurst_exponent.util.utils import std_of_sums, structure_function, interpret_hurst, bootstrap
+from hurst_exponent.util.utils import std_of_sums, structure_function
 
 
 def _preprocess_series(series: np.array) -> np.array:
     """Preprocesses the given series: handles non-array input, zeroes, NaNs, Infs, and removes mean."""
-    if not isinstance(series, (np.ndarray, pd.Series)):
+    if not isinstance(series, (np.ndarray)):
         series = np.array(series, dtype=float)
 
     replace_zero = 1e-10

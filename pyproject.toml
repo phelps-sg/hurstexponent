@@ -2,6 +2,10 @@
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+# Add other black configurations if needed.
+[tool.black]
+line-length = 120
+
 [tool.poetry]
 name = "hurst-exponent"
 version = "0.1.0"
@@ -30,6 +34,7 @@ statsmodels = "*"
 stochastic = "*"
 matplotlib = "*"
 
+
 [tool.poetry.dev-dependencies]
 pylint = "^2.17.5"
 mypy = "^1.5.1"
@@ -38,6 +43,7 @@ pytest = "^7.4.1"
 pytest-mock = "^3.11.1"
 pytest-xdist = "^3.3.1"
 black = "*"
+flake8 = "*"
 
 [build]
 include = ["README.md"]
