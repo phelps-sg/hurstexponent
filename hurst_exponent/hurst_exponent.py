@@ -40,10 +40,7 @@ def _fit_data(fitting_method: str, xy_values: pd.DataFrame) -> Fit:
 
 
 def standard_hurst(
-    series: np.array,
-    fitting_method: str = "MLE",
-    min_lag: int = 1,
-    max_lag: int = 100
+    series: np.array, fitting_method: str = "MLE", min_lag: int = 1, max_lag: int = 100
 ) -> Tuple[float, Fit]:
     """
     Compute the Hurst exponent using standard the standard deviation of sums:
@@ -85,9 +82,12 @@ def standard_hurst(
     if not valid_lags or not y_values:
         return np.nan, np.nan, [[], []]
 
+    # Fit and return Hurst
     xy_df = pd.DataFrame({"x_values": valid_lags, "y_values": y_values})
     fit_results = _fit_data(fitting_method, xy_df)
     H = fit_results.powerlaw.params.alpha
+    if H <= 0 or H >= 1:
+        raise ValueError("Hurst value must be in interval (0,1).")
 
     return H, fit_results
 
@@ -139,9 +139,9 @@ def generalized_hurst(
     if not valid_lags or not S_q_tau_values:
         return np.nan, np.nan, [[], []]
 
+    # Fit and return Hurst
     xy_df = pd.DataFrame({"x_values": valid_lags, "y_values": S_q_tau_values})
     fit_results = _fit_data(fitting_method, xy_df)
     H = fit_results.powerlaw.params.alpha
 
     return H, fit_results
-

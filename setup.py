@@ -9,7 +9,7 @@ with open(path.join(here, "README.rst"), encoding="utf-8") as readme_file:
 
 setup(
     name="hurst-exponent",
-    version = "1.0.1",
+    version="0.1.0",
     packages=find_packages(),
     url="https://github.com/anabugaenko/hurst_exponent",
     license="MIT LICENSE",

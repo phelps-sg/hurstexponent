@@ -1,10 +1,11 @@
+from matplotlib import pyplot as plt
+from stochastic.processes.continuous import FractionalBrownianMotion
+
 from hurst_exponent.hurst_exponent import *
 
-if __name__ == "__main__":
-    # Fractal BM
-    from stochastic.processes.continuous import FractionalBrownianMotion
-    from matplotlib import pyplot as plt
 
+if __name__ == "__main__":
+    # FBM
     fbm = FractionalBrownianMotion(hurst=0.5, t=1)
     fbm_series = fbm.sample(10000)
     lags = fbm.times(10000)
@@ -16,8 +17,8 @@ if __name__ == "__main__":
     hurst_gen, fit_gen = generalized_hurst(fbm_series)
 
     # Print fitting results
-    fit_std.powerlaw.print_fitted_results()
-    fit_gen.powerlaw.print_fitted_results()
+    fit_std.powerlaw.fit_results()
+    fit_gen.powerlaw.fit_results()
 
     # Interpret and display the results
     fit_std.powerlaw.plot_fit()

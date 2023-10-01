@@ -37,7 +37,6 @@ def bootstrap(
     return np.array([estimator(gbm.sample(2048))[0] for _ in range(reps)])
 
 
-
 # Helper functions
 
 
@@ -90,6 +89,8 @@ def _calculate_diffs(ts: np.array, lag: int) -> np.ndarray:
     """
     Calculate detrended differences at specified lag steps in the time series.
 
+    x(t + lag) - x(t)
+
     Parameters
     ----------
     ts : np.array
@@ -102,7 +103,6 @@ def _calculate_diffs(ts: np.array, lag: int) -> np.ndarray:
     diffs : np.ndarray
         Detrended differences of the time series at specified lags
     """
-
     return ts[:-lag] - ts[lag:]
 
 
@@ -156,7 +156,7 @@ def interpret_hurst(H: float) -> str:
         Interpretation of Hurst Exponent.
     """
     if not 0 <= H <= 1:
-    # FIXME: The Generalized Hurst for white noise is dimension dependent, and for 1D and 2D it is H_{q}^{1D}={\frac {1}{2}},\quad H_{q}^{2D}=-1.
+        # FIXME: The Generalized Hurst for white noise is dimension dependent, and for 1D and 2D it is H_{q}^{1D}={\frac {1}{2}},\quad H_{q}^{2D}=-1.
         raise ValueError("Hurst exponent not in a valid range (0,1).")
     if np.isclose(H, 0.5):
         return "Diffusive: series is close to a Geometric or Brownian random walk"
