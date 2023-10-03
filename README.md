@@ -9,6 +9,7 @@ Estimate the Hurst exponent of a random variable using robust statistical method
   - Interpretation of Hurst exponent values.
   - Ability to plot and visualize fit results.
   - Bootstrap functionality for additional statistics.
+  - Compute linear and nonlinear autocorrelation functions (ACF)
   - Test suite test suite is meant to validate the functionality of Hurst exponent estimators.
   - Other hurst estimation methods will be supported in the near future.
 
