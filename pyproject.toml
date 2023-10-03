@@ -8,7 +8,7 @@ line-length = 120
 
 [tool.poetry]
 name = "hurst-exponent"
-version = "0.1.0"
+version = "0.1.1"
 description = "Hurst exponent estimator"
 authors = ["Anastasia Bugeenko <anabugaenko@gmail.com>"]
 license = "MIT"
