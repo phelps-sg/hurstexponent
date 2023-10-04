@@ -1,8 +1,38 @@
+import pandas as pd
 import numpy as np
 from numpy import ndarray
 from typing import Union, Any, Callable, Tuple
 
+from statsmodels.tsa.stattools import adfuller
 from stochastic.processes.continuous import GeometricBrownianMotion
+
+
+# ADF test
+def augmented_dickey_fuller(sample, name: str, alpha=0.05):
+    # Convert list to pandas Series if necessary
+    if isinstance(sample, list):
+        sample = pd.Series(sample)
+
+    # Replace inf and -inf with nan
+    sample.replace([np.inf, -np.inf], np.nan, inplace=True)
+
+    # Drop nan values
+    sample.dropna(inplace=True)
+
+    print(name)
+    adf, p, usedlag, nobs, cvs, aic = adfuller(sample)
+    adf_results_string = "ADF: {:.2f}\np-value: {:.2f},\nN: {}, \ncritical values: {}"
+    print(adf_results_string.format(adf, p, nobs, cvs))
+
+    # Interpretation
+    if p < alpha:
+        print("We reject the null hypothesis at a significance level of {}.".format(alpha))
+        print("The time series appears to be stationary.")
+    else:
+        print("We cannot reject the null hypothesis at a significance level of {}.".format(alpha))
+        print("The time series appears to be non-stationary.")
+
+    print("\n")
 
 
 # Boostrap
@@ -64,7 +94,7 @@ def std_of_sums(ts: np.array, lag_size: int) -> Union[ndarray, Any]:
     """
     Computes the standard deviation of sums of time series lags of size lag_size.
 
-    :math: \Sigma_{\sqrt {|X(t+τ)−X(t)|^2}}
+    :math: Sigma_{sqrt {|X(t+τ)−X(t)|^2}}
 
     Parameters
     ----------

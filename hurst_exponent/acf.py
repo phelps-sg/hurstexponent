@@ -52,23 +52,29 @@ class CustomSeries(pd.Series):
             raise ValueError("Invalid method. Choose either 'spearman' or 'kendall'.")
 
 
-def linear_acf(series: pd.Series, lags: int) -> List:
+def linear_acf(series: pd.Series, lags: int) -> pd.Series:
     """
     Returns a list of linearly autocorrelated values for each of the lags from 0 to `lags`
     """
+    series = series.copy()
     acl_ = []
     for i in range(lags):
         ac = series.autocorr(lag=i)
         acl_.append(ac)
-    return acl_
+    acl_series = pd.Series(acl_, index=range(lags))
+
+    return acl_series
 
 
 def nonlinear_acf(series: pd.Series, lags: int, method: str = "kendall") -> List:
     """
     Returns a list of nonlinear autocorrelation values for each of the lags from 0 to `lags`
     """
+    series = series.copy()
     acl_ = []
     for i in range(lags):
         ac = CustomSeries(series).nonlinear_autocorr(lag=i, method=method)
         acl_.append(ac)
-    return acl_
+    acl_series = pd.Series(acl_, index=range(lags))
+
+    return acl_series

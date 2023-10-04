@@ -12,7 +12,9 @@ if __name__ == "__main__":
     fbm = FractionalBrownianMotion(hurst=0.5, t=1)
     fbm_series = fbm.sample(10000)
     lags = fbm.times(10000)
+
     plt.plot(lags, fbm_series)
+    plt.grid(False)
     plt.show()
 
     # Estimate Hurst Exponent using both methods
