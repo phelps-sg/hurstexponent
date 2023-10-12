@@ -1,7 +1,8 @@
+import warnings
 import numpy as np
 import pandas as pd
-from powerlaw_function import Fit
 from typing import Tuple
+from powerlaw_function import Fit
 
 
 from hurst_exponent.util.utils import std_of_sums, structure_function
@@ -86,8 +87,8 @@ def standard_hurst(
     xy_df = pd.DataFrame({"x_values": valid_lags, "y_values": y_values})
     fit_results = _fit_data(fitting_method, xy_df)
     H = fit_results.powerlaw.params.alpha
-    if H <= 0 or H >= 1:
-        raise ValueError("Hurst value must be in interval (0,1).")
+    if not 0 <= H <= 1:
+        warnings.warn("Hurst exponent not in a valid range (0,1).")
 
     return H, fit_results
 
@@ -143,5 +144,7 @@ def generalized_hurst(
     xy_df = pd.DataFrame({"x_values": valid_lags, "y_values": S_q_tau_values})
     fit_results = _fit_data(fitting_method, xy_df)
     H = fit_results.powerlaw.params.alpha
+    if not 0 <= H <= 1:
+        warnings.warn("Hurst exponent may not be in a valid range (0,1).")
 
     return H, fit_results
