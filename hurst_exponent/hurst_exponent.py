@@ -44,7 +44,7 @@ def standard_hurst(
     series: np.array, fitting_method: str = "MLE", min_lag: int = 1, max_lag: int = 100
 ) -> Tuple[float, Fit]:
     """
-    Compute the Hurst exponent using standard the standard deviation of sums:
+    Compute the Hurst exponent using the standard deviation of sums:
 
         Patzelt, Felix, and Jean-Philippe Bouchaud. "Universal scaling and
         nonlinearity of aggregate price impact in financial markets."
