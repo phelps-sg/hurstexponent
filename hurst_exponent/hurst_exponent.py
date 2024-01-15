@@ -6,9 +6,7 @@ from typing import Optional, Tuple
 from powerlaw_function import Fit
 
 
-from hurst_exponent.util.utils import std_of_sums, structure_function
-
-Series = NDArray[np.float64]
+from hurst_exponent.util.utils import Series, std_of_sums, structure_function
 
 
 def _preprocess_series(series: Series) -> Series:
