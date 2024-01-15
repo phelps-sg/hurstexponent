@@ -1,12 +1,13 @@
+from numpy._typing import NDArray
 import pandas as pd
 import numpy as np
 from numpy import ndarray
-from typing import List, Optional, Union, Any, Callable, Tuple
+from typing import Optional, Union, Any, Callable, Tuple
 
 from statsmodels.tsa.stattools import adfuller
 from stochastic.processes.continuous import GeometricBrownianMotion
 
-from hurst_exponent.hurst_exponent import Series
+Series = NDArray[np.float64]
 
 
 # ADF test
